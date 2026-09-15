@@ -1,0 +1,12 @@
+{
+  "name": "ace-agent-learning-framework",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Project-agnostic Agentic Context Engineering lifecycle for local agent teams.",
+  "scripts": {
+    "test": "node --test test/runtime.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

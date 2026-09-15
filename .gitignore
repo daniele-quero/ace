@@ -1,0 +1,13 @@
+ace/config/project.json
+ace/proposals/*.json
+ace/proposals/applied/*.json
+ace/traces/*.json
+ace/traces/processed/*.json
+ace/state/*.json
+ace/state/applications/
+ace/state/*.lock
+
+!ace/proposals/.gitkeep
+!ace/proposals/applied/.gitkeep
+!ace/traces/.gitkeep
+!ace/traces/processed/.gitkeep
