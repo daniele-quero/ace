@@ -1,194 +1,346 @@
-# ACE runtime — reference
+# ACE: Agentic Context Engineering
 
-ACE (Agentic Context Engineering) is a project-agnostic operational-memory
-lifecycle for a local team of agents. This document explains the runtime that
-lives under `ace/` and `playbooks/` once ACE is installed into a host
-project: what each piece is for, how the cycle flows, how configuration
-drives behavior, the safety gates, and the boundary between the one-time
-installer and the durable runtime.
+ACE is a framework that turns execution into durable operating memory for a team of agents. Instead of embedding the same rules in every prompt and improvising them task by task, the team records what actually happened, reflects on it, turns repeated patterns into structured proposals, validates those proposals, and then applies only the decisions that have real evidence behind them.
 
-This kit repository (`ace-agent-learning-framework`) is itself a **template
-project**: it contains the generic runtime plus the installer
-(`INSTALL_PROMPT.md`) that copies it into a host project and fills in that
-project's specifics. Nothing under `ace/` or `playbooks/` here names a real
-team, agent, or domain — every project-specific detail is either a
-placeholder or lives in `ace/config/project.json`, which the installer
-materializes and this kit intentionally leaves as a template.
+The result is a learning loop: `trace` files become evidence, `proposal` documents become candidate changes, and the `playbook` plus the generated `instructions` become the system's durable, reusable context.
 
-## Runtime layout
+This repository is the runtime template for the cycle. It does not contain a real domain application or a real team. It contains the generic engine that can be installed into a host project and then grown by that project's own evidence.
+
+## The ACE cycle, top-down
+
+The best way to read ACE is from the outside in:
+
+1. a task is executed by an agent;
+2. a `trace` records what happened;
+3. a `reflector` reads a batch of traces and proposes a change;
+4. a `curator` turns proposals into typed `decision` objects;
+5. a `warden` validates the decision and asks for explicit human sign-off;
+6. the `playbook` is updated, then `instructions` are regenerated from it;
+7. the next session starts with better context and cleaner operating rules.
+
+This is not a diagnostic engine and not a business-logic engine. It is an operational learning loop that uses evidence to improve the agent system itself.
+
+## Runtime structure
 
 ```text
 ace/
 ├── config/
-│   ├── project.template.json   # copied to project.json and filled in at install time
-│   └── thresholds.json         # batch-size thresholds for auto-invocation (see below)
+│   ├── project.json             # real runtime configuration for the host project
+│   └── thresholds.json          # batch triggers for reflector / curator / warden
 ├── prompts/
-│   ├── reflector.md            # conceptual source of the reflector role
-│   ├── curator.md              # conceptual source of the curator role
-│   └── warden.md               # conceptual source of the warden role
-├── proposals/                  # reflector output (batches) and curator decisions, until applied
-│   └── applied/                # processed batches (proposals + decisions + gate report), kept for audit
+│   ├── reflector.md             # how the `reflector` reads traces and proposes change
+│   ├── curator.md               # how the `curator` turns proposals into decisions
+│   └── warden.md                # how the `warden` validates and applies the signed-off delta
 ├── schema/
-│   ├── trace.schema.json       # shape of one trace file
-│   └── bullet.schema.json      # shape of one playbook bullet
-├── scripts/                    # deterministic Node scripts; the only code that writes runtime state
-│   ├── generate_ace_agents.js  # renders per-platform ACE agent wrappers from prompts/ + config
-│   ├── retrieval.js            # syncs playbooks/*.md into each platform's instruction files
-│   ├── check_threshold.js      # reports whether a batch is large enough to auto-invoke the next stage
-│   ├── update_counters.js      # sums trace outcomes into bullet used/helped/hurt counters
-│   ├── gate.js                 # mechanical validation of a curator decisions file
-│   ├── apply_delta.js          # applies a signed-off gate report to playbooks/*.md
-│   ├── validate_install.js     # checks that a runtime installation is structurally complete
-│   └── lib/playbook.js         # shared helpers (config loading, playbook parsing/serialization)
+│   ├── trace.schema.json        # shape of one `trace`
+│   └── bullet.schema.json       # shape of one `bullet` inside the `playbook`
+├── proposals/
+│   └── applied/                 # processed batches, decisions, and gate reports
+├── scripts/
+│   ├── generate_ace_agents.js   # renders platform wrappers and runtime agents
+│   ├── retrieval.js             # regenerates platform `instructions` from the `playbook`
+│   ├── check_threshold.js       # decides whether the next stage should trigger
+│   ├── update_counters.js       # sums evidence from traces into bullet counters
+│   ├── gate.js                  # mechanical validation before a write is allowed
+│   ├── apply_delta.js           # applies the signed-off delta to the `playbook`
+│   └── validate_install.js      # verifies the installed runtime is structurally complete
 ├── state/
-│   └── live-exclusions.json    # generated at runtime; excluded bullets pending curator action
-└── traces/
-    ├── CAPTURE_GUIDE.md         # how to write one trace file
-    └── processed/               # traces already folded into a reflector batch
-
-playbooks/
-├── _global.md                  # bullets shared by every agent
-├── families/                   # bullets shared by a cross-cutting task family, not a single agent
-├── archive/                     # deprecated/merged bullets, kept for provenance
-└── <agent>.md                  # one file per agent named in config/project.json (created at install time)
+│   └── live-exclusions.json     # runtime exclusions while a bad rule is under review
+├── traces/
+│   ├── processed/               # traces that have already been folded into a batch
+│   └── CAPTURE_GUIDE.md         # how one trace should be written
+├── playbooks/                  # durable source of learned rules
+│   ├── _global.md
+│   ├── families/
+│   ├── archive/
+│   └── <agent>.md
+└── README.md                   # human-facing overview of the lifecycle
 ```
 
-## The cycle
+The important architectural point is that the runtime is deliberately split between the durable, reviewable `playbook` and the generated, compact `instructions` used by the active session.
 
-ACE runs in four stages, each with a narrow job and a narrow set of write
-permissions. No stage skips the one before it, and no stage but the gate +
-warden ever writes to `playbooks/*.md`.
+## The core objects in the loop
 
-1. **Trace capture** — the orchestrator agent (the one named in
-   `orchestrator_agent`) writes one trace file per involved agent to
-   `ace/traces/<task_id>__<agent>.json` after each session, following
-   [`traces/CAPTURE_GUIDE.md`](traces/CAPTURE_GUIDE.md) and
-   [`schema/trace.schema.json`](schema/trace.schema.json). Traces are the only
-   raw evidence the rest of the cycle works from.
-2. **Reflector** ([`prompts/reflector.md`](prompts/reflector.md)) — runs in
-   batch, reads every unprocessed trace, and writes structured *proposals* to
-   `ace/proposals/<batch>.json`. It never edits a playbook and never emits a
-   typed operation; it only proposes, with evidence and a stated
-   `relation_to_existing` bullet.
-3. **Curator** ([`prompts/curator.md`](prompts/curator.md)) — reads a
-   proposals file and turns each proposal into a typed operation (`ADD`,
-   `UPDATE`, `DEPRECATE`, `MERGE`, `PROMOTE`, or `REJECT`), written to
-   `ace/proposals/<batch>-decisions.json`. It still never edits a playbook —
-   its output is "ready for the gate", not applied.
-4. **Warden** ([`prompts/warden.md`](prompts/warden.md)) — the only stage
-   that touches `playbooks/*.md`, and only through two deterministic scripts:
-   `gate.js` (mechanical validation) and `apply_delta.js` (the actual write,
-   which also re-runs `retrieval.js` so instruction files never drift). Every
-   write requires an explicit human confirmation, asked one step at a time
-   through the platform's dedicated question tool — never inferred from
-   silence or a relayed "the user agreed".
+### `trace`
 
-Each transition (reflector→curator, curator→warden) has a double trigger:
-on-demand, whenever a human invokes the next stage, or automatic, when
-`check_threshold.js` reports the configured threshold reached. Reaching a
-threshold never bypasses the warden's human sign-off — it only decides
-whether the *next agent* is invoked automatically.
+A `trace` is the evidence record for a task. It records the facts that matter to learning: which `playbook` bullets were seen, which were cited, what happened, and whether the outcome was verified.
 
-## Configuration: `ace/config/project.json`
+Example:
 
-Everything that varies between host projects is a value in this file, never
-a name hardcoded in a prompt or script. It is created by copying
-[`config/project.template.json`](config/project.template.json) at install
-time and is never checked into the kit itself. Key fields:
-
-- `team_name` — human-readable team or project label used in generated text.
-- `provisional_evaluator` — filesystem-safe `<slug>-auto` label used for
-  immediate self-report trace evidence in `outcome.evaluated_by`.
-- `orchestrator_agent` — the single agent allowed to write traces, run
-  counters, and invoke the reflector.
-- `participating_agents` — every other agent whose sessions produce traces
-  and who gets a scoped playbook (`playbooks/<agent>.md`).
-- `platforms.<copilot|claude>` — per-platform `enabled` flag, directory
-  layout (`agents_dir`, `global_instructions_file`, `agent_instructions_dir`),
-  `runtime_prefix` (`gh`/`cl`), `model`, and the `tools` array each ACE role
-  is allowed to use on that platform. `generate_ace_agents.js` reads this to
-  render each platform's wrapper; nothing about a platform is assumed inside
-  `prompts/*.md`.
-
-[`config/thresholds.json`](config/thresholds.json) holds the batch-size
-numbers `check_threshold.js` reads — how many unprocessed traces trigger the
-reflector, how many proposals trigger the curator, how many decisions
-trigger the warden. These are operational tuning knobs, read at runtime, not
-baked into any prompt.
-
-## Safety gates
-
-- **Deterministic before judgment**: `update_counters.js` and
-  `check_threshold.js` do pure, mechanical accounting (sum trace outcomes,
-  count files) — they never decide whether a lesson is good, only whether
-  enough evidence/volume exists to invoke the next role.
-- **Confirmed vs. provisional evidence**: every bullet counter is split into
-  `_confirmed` (verified outcome, human feedback, gate replay, or reflector
-  LLM judgment) and `_provisional` (self-report only). Structural decisions
-  (`DEPRECATE`, `PROMOTE`) are expected to rely on confirmed counters, not
-  provisional ones — see `prompts/curator.md`.
-- **Two-part gate**: `gate.js` only performs what is actually automatable —
-  schema/enum validity, ID collisions, operation/state compatibility (e.g. a
-  `PROMOTE` must originate from `quarantined`), and that cited trace evidence
-  exists. The one thing it deliberately does **not** automate is semantic
-  conflict between a new bullet and existing active bullets in the same
-  scope — that is a human judgment call, posed explicitly to the warden's
-  reviewer as a checklist before sign-off.
-- **No silent writes**: `apply_delta.js` refuses to run unless the gate
-  report it is given has `signed_off: true` **and** `all_mechanical_pass:
-  true`. The warden never treats a relayed "the user confirmed" as
-  sufficient without the literal question and literal answer from the
-  platform's dedicated question tool.
-- **Live exclusion, not silent drift**: `retrieval.js` recomputes, on every
-  run, whether a bullet's confirmed `hurt` now outweighs its confirmed
-  `helped`; if so it is excluded from what gets served to agents immediately,
-  and the exclusion is persisted to `ace/state/live-exclusions.json` for the
-  curator to formalize (or reverse) on its next run — a bad bullet never
-  keeps being injected just because nobody has re-run the curator yet.
-
-## Install-vs-runtime boundary
-
-This repository plays two roles that must not be confused:
-
-- **Kit / installer** — `INSTALL_PROMPT.md`, `ace/templates/*.md`, and
-  `ace/config/project.template.json` exist only to be read once, by an
-  installation agent, to bootstrap ACE into a different host project. They
-  are never themselves the running system, and the kit's own copies of
-  `ace/` and `playbooks/` stay empty of any real team's data — no traces,
-  proposals, decisions, learned bullets, or `project.json` are ever
-  committed here.
-- **Runtime** — once installed, `ace/` and
-  `playbooks/` become part of the host project and evolve there: traces
-  accumulate, batches get processed, bullets get added/updated/deprecated,
-  and `ace/config/project.json` holds that project's real configuration.
-  The runtime does not depend on re-reading `INSTALL_PROMPT.md`; templates
-  may remain as maintenance references, while `generate_ace_agents.js`,
-  `retrieval.js`, and the gate/apply scripts keep generated assets in sync.
-
-Re-running the installer against an already-installed project is an
-upgrade, not a clean install — see `INSTALL_PROMPT.md` Phase 0 — and must
-never overwrite accumulated traces, proposals, or playbook bullets.
-
-## Commands
-
-Run from the host project's root once ACE is installed (or from this kit's
-root, against its own fixtures, when developing the kit itself):
-
-```sh
-node ace/scripts/generate_ace_agents.js [--check]   # render/verify per-platform ACE agent wrappers
-node ace/scripts/retrieval.js [--check]             # sync playbooks/*.md into platform instruction files
-node ace/scripts/validate_install.js                # check the installation is structurally complete
-node ace/scripts/check_threshold.js reflector
-node ace/scripts/check_threshold.js curator --file ace/proposals/<batch>.json
-node ace/scripts/check_threshold.js warden   --file ace/proposals/<batch>-decisions.json
-node ace/scripts/update_counters.js                 # before invoking the reflector on a batch
-node ace/scripts/gate.js <decisions-file.json> [--sign-off]
-node ace/scripts/apply_delta.js <gate-report.json>
-npm test                                            # runs test/runtime.test.js against synthetic fixtures
+```json
+{
+  "task_id": "T-204",
+  "agent": "planner",
+  "started_at": "2026-09-16T09:00:00Z",
+  "ended_at": "2026-09-16T09:14:00Z",
+  "playbook_bullets_seen": ["PR-011", "PR-015"],
+  "playbook_bullets_cited": ["PR-011"],
+  "outcome": {
+    "status": "success",
+    "evaluated_by": "verified"
+  },
+  "notes": "The file path check prevented a wrong-target write.",
+  "friction": ["The path was ambiguous at first."],
+  "counted_for_playbook_at": "2026-09-16T09:15:00Z"
+}
 ```
 
-See [`prompts/reflector.md`](prompts/reflector.md),
-[`prompts/curator.md`](prompts/curator.md), and
-[`prompts/warden.md`](prompts/warden.md) for the full behavioral contract of
-each stage, and [`traces/CAPTURE_GUIDE.md`](traces/CAPTURE_GUIDE.md) for the
-trace format in detail.
+### `proposal`
+
+A `proposal` is a candidate rule, not a write. The `reflector` reads batches of `trace` files and produces structured hypotheses about what should change.
+
+Example:
+
+```json
+{
+  "proposal_id": "PR-042",
+  "batch_id": "batch-2026-09-16",
+  "relation_to_existing": "UPDATE",
+  "target_bullet_id": "PR-011",
+  "confidence": "high",
+  "final_content": "Before writing a file, verify the destination path and extension before creating the file.",
+  "rationale": "This was cited in two different tasks and prevented wrong-target writes."
+}
+```
+
+### `decision`
+
+A `decision` is the curator's typed response to a `proposal`. It says whether the proposal becomes `ADD`, `UPDATE`, `DEPRECATE`, `MERGE`, `PROMOTE`, or `REJECT`.
+
+Example:
+
+```json
+{
+  "proposal_id": "PR-042",
+  "decision": "UPDATE",
+  "target_bullet_id": "PR-011",
+  "scope": "global",
+  "curator_rationale": "The evidence is consistent and the rule is already close to the intended behavior."
+}
+```
+
+## The lifecycle in four stages
+
+```text
+`trace` capture
+        ↓
+`reflector` reads batch and emits `proposal`
+        ↓
+`curator` turns proposal into `decision`
+        ↓
+`warden` validates and requests human sign-off
+        ↓
+`playbook` update + `instructions` regeneration
+```
+
+### 1. `trace` capture
+
+The runtime records one `trace` per relevant agent per task. This is the raw evidence for the rest of the loop. A `trace` is intentionally compact: it is not a narrative of the session, only a structured record of relevant facts, outcomes, friction, and evidence.
+
+### 2. `reflector`
+
+The `reflector` works in batch. It reads all unprocessed `trace` files, detects recurring patterns, checks against the current `playbook`, and writes a structured `proposal` file. It never edits the `playbook` directly and it never decides operationally whether a rule should be live.
+
+### 3. `curator`
+
+The `curator` receives the batch of proposals and converts each one into a typed `decision`. This is the point where the system stops reacting to a single anecdote and starts turning noisy evidence into a defensible decision.
+
+### 4. `warden`
+
+The `warden` is the safety gate. It performs deterministic checks such as schema validity, ID consistency, and operation compatibility. It also blocks writes unless a human explicitly approves the final action. This is where the learning loop is kept honest.
+
+## Human in the loop
+
+ACE is intentionally not a silent auto-optimizer. The human remains part of the loop at the point where a change can actually affect the durable runtime.
+
+The pattern is:
+
+```text
+mechanical validation -> explicit question -> human review -> signed-off write
+```
+
+This matters because the system is learning from real execution data, not manufacturing confidence. `gate.js` can check structure and consistency, but it cannot reliably judge semantic conflict between a new rule and the existing `playbook` in the same scope. That remains a human judgment.
+
+The human sign-off is therefore not optional decoration. It is the mechanism that turns a proposed change into a real runtime decision. Without that explicit confirmation, `apply_delta.js` refuses to write, and `retrieval.js` will not regenerate the operational `instructions` from the new state.
+
+In other words, the human is the final reviewer of the system's memory. The system can propose and validate; only the human decides whether the new rule belongs in the durable operating context.
+
+## `playbook` and `instructions`: different content, different purpose
+
+The difference is intentional. A `playbook` is the durable source of truth; `instructions` are the generated runtime view the active session sees.
+
+```text
+`playbook`                                              `instructions`
+────────────────────────────────────────────────────────────────────────────────────
+Source of truth for the team                             Generated runtime artifact
+Has durable metadata: status, scope, tags, counters      Stripped to the operational directives
+Stores provenance and evidence                           No governance metadata in the agent context
+Designed for review, debate, promotion, deprecation      Designed for fast consumption by a live agent
+May contain candidates, quarantine, archive states       Only active, safe, retrieved content is served
+```
+
+This separation exists for two reasons:
+
+- The `playbook` must preserve the full lifecycle of a rule: how it was created, what evidence supports it, what status it has, and which counters it has accumulated.
+- The `instructions` need to be compact, readable, and safe for an active agent to consume in-session. They are a filtered subset of the `playbook`, not a second source of truth.
+
+A rule that has been deprecating or quarantined should not stay active in the generated context just because the system is still holding on to it in memory. Retrieval resolves that by applying the latest counters and exclusion policy before generating `instructions`.
+
+## Example: the real `playbook` format, the schema, and the generated `instructions`
+
+The most important correction is this: the real `playbook` on disk is not a standalone JSON object. It is a markdown file in `playbooks/*.md`, and the actual bullet format is the one parsed by [ace/scripts/lib/playbook.js](../ace/scripts/lib/playbook.js) and described in the comment inside [playbooks/_global.md](../playbooks/_global.md).
+
+This means there are two layers to understand:
+
+- the logical schema in [ace/schema/bullet.schema.json](../ace/schema/bullet.schema.json), which is the canonical JSON shape used for validation and runtime logic;
+- the markdown serialization in the `playbook` file itself, which is what the script writes and reads on disk.
+
+The real markdown format is:
+
+```md
+## P-014 — active — used:12 helped:9 hurt:1
+Before creating a file, verify the target path and extension before writing.
+
+tags: [filesystem, write, path]
+counters: helped_confirmed=7; helped_provisional=2; hurt_confirmed=1; hurt_provisional=0
+provenance: source_trace_ids=[T-108, T-201]; created_at=2026-09-16T10:00:00Z; created_by=reflector+curator; batch_id=batch-2026-09-16
+```
+
+The logical schema for the same rule is the JSON model used by validation, not the literal file format:
+
+```json
+{
+  "id": "P-014",
+  "status": "active",
+  "scope": { "type": "global" },
+  "content": "Before creating a file, verify the target path and extension before writing.",
+  "tags": ["filesystem", "write", "path"],
+  "counters": {
+    "used": 12,
+    "helped": 9,
+    "hurt": 1,
+    "helped_confirmed": 7,
+    "helped_provisional": 2,
+    "hurt_confirmed": 1,
+    "hurt_provisional": 0
+  },
+  "provenance": {
+    "source_trace_ids": ["T-108", "T-201"],
+    "created_at": "2026-09-16T10:00:00Z",
+    "created_by": "reflector+curator"
+  }
+}
+```
+
+The generated `instructions` are intentionally smaller and stripped of governance metadata. The same rule becomes:
+
+```markdown
+- **[P-014]** When the described procedure depends on a specific appliance or container (induction hob, microwave, sealed jar, roaster, etc.), always involve `<cook-physicist>` even if the user request does not explicitly contain keywords related to physics or safety.
+```
+
+The important point is that the `playbook` keeps the full operational record, while the `instructions` are only the filtered runtime view that the live agent consumes.
+
+## Why `PR`?
+
+The acronym `PR` in ACE is chosen to mean `playbook rule`. The underlying idea is that every bullet is a small, reviewable operational rule: a unit of knowledge that can be evaluated, promoted, updated, deprecated, or rejected as evidence changes.
+
+This makes `PR` a meaningful identifier for the atomic unit of the learning loop, not a generic label. In a human-facing document, `PR` communicates that the object is an operational rule in the durable memory of the system, not just a temporary note or an arbitrary comment.
+
+A good example is an identifier such as `PR-014`—short, stable, and semantically meaningful for a reviewed rule in the `playbook`.
+
+## The structure of a `bullet`
+
+A `bullet` is the smallest unit of learned instruction in ACE. The fields are intentionally separated between operational content and governance metadata.
+
+```json
+{
+  "id": "PR-014",
+  "status": "active",
+  "scope": { "type": "global" },
+  "content": "Check the target location before writing a new file.",
+  "tags": ["filesystem", "write"],
+  "counters": {
+    "used": 12,
+    "helped": 9,
+    "hurt": 1
+  },
+  "provenance": {
+    "source_trace_ids": ["T-108", "T-201"],
+    "created_at": "2026-09-16T10:00:00Z",
+    "created_by": "reflector+curator"
+  }
+}
+```
+
+The operational text is what an agent sees in-session. Everything else—counters, provenance, lifecycle state—exists to support governance and safe retrieval.
+
+## Why the cycle is batch-oriented
+
+ACE is designed around batches, not single-case reactions. A single task is not enough to justify a structural change to the `playbook`. The system waits until a meaningful set of traces exists, then runs the `reflector`, then the `curator`, then the `warden`.
+
+This creates a disciplined learning rhythm:
+
+- small daily signals are gathered as `trace` data;
+- repeated patterns are aggregated in a batch;
+- the system proposes only after evidence accumulates;
+- only a signed-off `decision` can produce a durable change.
+
+## Conclusion
+
+ACE is not about automating the team away. It is about giving the team a structured memory that improves over time without forcing every rule into every prompt by hand.
+
+The real pattern is simple:
+
+```text
+`trace` -> `proposal` -> `decision` -> `playbook` -> `instructions` -> better next session
+```
+
+What makes the system safe is the disciplined separation between evidence collection, proposal generation, review, and final human sign-off. That is the reason ACE can learn without silently drifting into inconsistent or unreviewed behavior.
+
+## Appendix: quick purpose of each `ace` script
+
+The runtime is intentionally small, but each script has a narrow role. The following appendix is a quick map of who does what, when it runs, and why it exists.
+
+### `generate_ace_agents.js`
+
+- Purpose: render or verify the per-platform agent wrappers used to invoke ACE roles.
+- When: during setup or whenever the platform configuration changes.
+- Why: ensure the host project has the correct wrapper agents for the configured runtime.
+
+### `check_threshold.js`
+
+- Purpose: determine whether the next stage should trigger automatically.
+- When: after a session, after a reflector batch, or after a curator batch.
+- Why: batch-driven learning needs a mechanical threshold, not a guess. If a threshold is below 1, the stage is treated as "skip" and remains manual-only.
+
+### `update_counters.js`
+
+- Purpose: sum trace evidence into the counters of each active bullet.
+- When: before opening a new reflector batch and whenever evidence changes.
+- Why: keep the durable playbook and the live exclusion logic aligned with real execution data.
+
+### `retrieval.js`
+
+- Purpose: generate the runtime `instructions` from the active `playbook` state.
+- When: after a playbook change and before a live session consumes the context.
+- Why: avoid drifting instructions and keep the session context derived from the reviewed source of truth.
+
+### `gate.js`
+
+- Purpose: perform deterministic validation of a curator decision file.
+- When: before a human sign-off and before any write to the `playbook` is allowed.
+- Why: check schema coherence, duplicate IDs, semantic safety constraints, and evidence existence.
+
+### `apply_delta.js`
+
+- Purpose: write the signed-off batch to the `playbook` and then re-run retrieval.
+- When: only after `gate.js` passes and the human signs off.
+- Why: this is the only stage that mutates the durable runtime knowledge.
+
+### `validate_install.js`
+
+- Purpose: verify the installation is structurally complete.
+- When: after installation or before a run that assumes the runtime is ready.
+- Why: fail early on missing or unresolved project configuration.
+
+These scripts are intentionally narrow. They do not replace the human review step, and they do not all write state. The main pattern is: collect evidence -> count it -> propose -> decide -> gate -> human sign-off -> apply -> regenerate instructions.
