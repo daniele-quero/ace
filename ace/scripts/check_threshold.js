@@ -7,14 +7,16 @@
 // Non decide MAI da solo se invocare l'agente successivo: si limita a
 // dire "raggiunta: true/false" — la decisione di invocare resta un passo
 // esplicito nel prompt dell'agente chiamante (orchestratore/reflector/curator).
+// Se il valore di soglia è < 1, la fase viene interpretata come "skip"
+// nel routing automatico: il passaggio deve essere fatto solo a mano.
 //
 // Uso:
 //   node ace/scripts/check_threshold.js reflector
 //   node ace/scripts/check_threshold.js curator --file ace/proposals/<batch>.json
 //   node ace/scripts/check_threshold.js warden   --file ace/proposals/<batch>-decisions.json
 //
-// Stampa un JSON su stdout: { stage, count, threshold, reached }.
-// Exit code: 0 se reached, 1 se non reached, 2 su errore (argomenti/file).
+// Stampa un JSON su stdout: { stage, count, threshold, reached, skipped }.
+// Exit code: 0 se reached oppure skipped, 1 se non reached, 2 su errore (argomenti/file).
 
 const fs = require('fs');
 const path = require('path');
@@ -59,6 +61,7 @@ function main() {
 
   const config = loadConfig();
   const threshold = config[stage].threshold;
+  const skipped = threshold < 1;
 
   let count;
   try {
@@ -76,9 +79,9 @@ function main() {
     process.exit(2);
   }
 
-  const reached = count >= threshold;
-  console.log(JSON.stringify({ stage, count, threshold, reached }));
-  process.exit(reached ? 0 : 1);
+  const reached = !skipped && count >= threshold;
+  console.log(JSON.stringify({ stage, count, threshold, reached, skipped }));
+  process.exit(skipped || reached ? 0 : 1);
 }
 
 main();
