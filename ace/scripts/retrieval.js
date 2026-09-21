@@ -5,7 +5,7 @@
 // sincronizza il risultato (solo id + content, mai contatori/provenance)
 // nei file che la piattaforma dell'agente inietta/legge davvero. Quali
 // file esattamente dipende dal progetto in cui ACE è installato — non è
-// hardcoded qui, ma letto da config/project.json (vedi INSTALL_PROMPT.md):
+// hardcoded qui, ma letto da config/project.json (vedi INSTALL_PROMPT_EMBEDDED.md):
 // - i bullet di scope "global" vanno in `global_instructions_file` (es.
 //   `.github/copilot-instructions.md` per Copilot, che lo legge in ogni
 //   sessione automaticamente; o `CLAUDE.md` per Claude Code, stesso
@@ -20,7 +20,7 @@
 //   affidabile e portabile è che ogni agente li legga esplicitamente
 //   (es. con un tool di lettura file) come primo passo del proprio
 //   workflow — vedi il passo iniettato dal wizard nei prompt degli agenti
-//   e ace/README.md per il contratto generico.
+//   e ace/README_EMBEDDED.md per il contratto generico.
 //
 // Uso:
 //   node ace/scripts/retrieval.js            # scrive i file
@@ -151,9 +151,41 @@ function syncMarkedFile(absPath, block, checkOnly) {
   return changed;
 }
 
+function removeMarkedBlock(absPath, checkOnly, unlinkWhenEmpty = false) {
+  assertSafeWritePath(absPath);
+  if (!fs.existsSync(absPath)) return false;
+  const existing = fs.readFileSync(absPath, 'utf8');
+  const beginIdx = existing.indexOf(BEGIN_MARKER);
+  const endIdx = existing.indexOf(END_MARKER);
+  if (beginIdx === -1 || endIdx < beginIdx) return false;
+  let before = existing.slice(0, beginIdx);
+  let after = existing.slice(endIdx + END_MARKER.length);
+
+  // Remove only the separator added around the generated block. Everything
+  // else, including fenced content and repeated blank lines, is project-owned.
+  const precedingSeparator = /(\r?\n)(\r?\n)$/.exec(before);
+  if (precedingSeparator) before = before.slice(0, -precedingSeparator[2].length);
+  const followingBreak = /^(\r?\n)/.exec(after);
+  if (followingBreak) after = after.slice(followingBreak[1].length);
+  const needsSeam = before && after && !/\r?\n$/.test(before) && !/^\r?\n/.test(after);
+  const rendered = `${before}${needsSeam ? (followingBreak?.[1] || '\n') : ''}${after}`;
+  if (!checkOnly) {
+    if (rendered) fs.writeFileSync(absPath, rendered);
+    else if (unlinkWhenEmpty) fs.unlinkSync(absPath);
+    else fs.writeFileSync(absPath, '');
+  }
+  return true;
+}
+
 function instructionsPathFor(scopeKey, agentInstructionsDir) {
   const name = scopeKey.startsWith('family:') ? `ace-family-${scopeKey.slice(7)}` : `ace-${scopeKey}`;
   return path.join(REPO_ROOT, agentInstructionsDir, `${name}.instructions.md`);
+}
+
+function globalInstructionsPath(platform, integrationMode) {
+  return integrationMode === 'mediated'
+    ? path.join(REPO_ROOT, platform.agent_instructions_dir, 'ace-global.instructions.md')
+    : path.join(REPO_ROOT, platform.global_instructions_file);
 }
 
 // Filtra solo le esclusioni "live" (le uniche non già visibili leggendo lo
@@ -200,7 +232,19 @@ function run({ checkOnly = false, verbose = true } = {}) {
   ])];
 
   for (const platform of enabledPlatforms(config)) {
-    const globalPath = path.join(REPO_ROOT, platform.global_instructions_file);
+    const mode = config.integration_mode || 'embedded';
+    if (mode === 'mediated') {
+      const platformGlobalPath = path.join(REPO_ROOT, platform.global_instructions_file);
+      if (removeMarkedBlock(platformGlobalPath, checkOnly)) {
+        changedFiles.push(path.relative(REPO_ROOT, platformGlobalPath));
+      }
+    } else {
+      const staleMediatedPath = globalInstructionsPath(platform, 'mediated');
+      if (removeMarkedBlock(staleMediatedPath, checkOnly, true)) {
+        changedFiles.push(path.relative(REPO_ROOT, staleMediatedPath));
+      }
+    }
+    const globalPath = globalInstructionsPath(platform, mode);
     const globalChanged = syncMarkedFile(
       globalPath,
       renderGlobalBlock(byScope.get('_global'), config.team_name),
@@ -231,7 +275,9 @@ function run({ checkOnly = false, verbose = true } = {}) {
   return changedFiles;
 }
 
-module.exports = { run };
+module.exports = {
+  collectBullets, globalInstructionsPath, instructionsPathFor, run,
+};
 
 if (require.main === module) {
   run({ checkOnly: process.argv.includes('--check') });

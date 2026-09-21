@@ -1,4 +1,4 @@
-# ACE installation prompt
+# ACE embedded installation prompt
 
 Use this prompt from the root of the ACE kit repository. Its purpose is to
 install the generic ACE framework into another local project. The directory

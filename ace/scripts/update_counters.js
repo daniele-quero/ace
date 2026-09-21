@@ -40,6 +40,7 @@
 // Uso:
 //   node ace/scripts/update_counters.js            # applica i delta
 //   node ace/scripts/update_counters.js --check    # stampa i delta, non scrive
+//   node ace/scripts/update_counters.js --task-id <id> # limita il batch al task
 
 const fs = require('fs');
 const path = require('path');
@@ -74,7 +75,7 @@ function recoverPendingJournal(verbose) {
   return true;
 }
 
-function collectUnprocessedTraces() {
+function collectUnprocessedTraces(taskId) {
   // Guarda sia ace/traces/ sia ace/traces/processed/: la marcatura
   // counted_for_playbook_at e lo spostamento in processed/ (fatto dal
   // reflector) sono disaccoppiati, quindi una trace può finire in
@@ -96,6 +97,7 @@ function collectUnprocessedTraces() {
     for (const abs of files) {
       const doc = readJSON(abs);
       if (doc.counted_for_playbook_at) continue; // già contata in un run precedente
+      if (taskId && doc.task_id !== taskId) continue;
       traces.push({ abs, doc });
     }
   }
@@ -275,7 +277,7 @@ function applyDeltas(deltas) {
   };
 }
 
-function run({ checkOnly = false, verbose = true } = {}) {
+function run({ checkOnly = false, verbose = true, taskId } = {}) {
   const releaseLock = checkOnly ? null : acquireMutationLock('update_counters');
   if (releaseLock) process.once('exit', releaseLock);
   if (!checkOnly && recoverPendingJournal(verbose)) {
@@ -283,7 +285,7 @@ function run({ checkOnly = false, verbose = true } = {}) {
     releaseLock();
     return { applied: [], warnings: [], recovered: true };
   }
-  const traces = collectUnprocessedTraces();
+  const traces = collectUnprocessedTraces(taskId);
   if (!traces.length) {
     if (verbose) console.log('Nessuna trace non ancora contata in ace/traces/.');
     if (releaseLock) releaseLock();
@@ -367,5 +369,12 @@ function run({ checkOnly = false, verbose = true } = {}) {
 module.exports = { run };
 
 if (require.main === module) {
-  run({ checkOnly: process.argv.includes('--check') });
+  const taskIndex = process.argv.indexOf('--task-id');
+  const taskId = taskIndex === -1 ? undefined : process.argv[taskIndex + 1];
+  if (taskIndex !== -1 && !taskId) {
+    console.error('Uso: node ace/scripts/update_counters.js [--check] [--task-id <task-id>]');
+    process.exitCode = 1;
+  } else {
+    run({ checkOnly: process.argv.includes('--check'), taskId });
+  }
 }
