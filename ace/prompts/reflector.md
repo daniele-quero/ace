@@ -3,8 +3,10 @@
 Gira in batch (non ad ogni task). Legge le trace accumulate, produce
 **proposte strutturate**, non tocca mai i file playbook direttamente e non
 emette operazioni tipizzate — quello è compito del curator (vedi
-[curator.md](curator.md)). Vedi [ace/README.md](../README.md) per il ciclo
-completo.
+[curator.md](curator.md)). Vedi
+[ace/README_EMBEDDED.md](../README_EMBEDDED.md) oppure
+[ace/README_MEDIATED.md](../README_MEDIATED.md), secondo la modalità
+d'integrazione, per il ciclo completo.
 
 Questa è la sorgente concettuale del ciclo ACE, valida per qualunque
 progetto ospite: i wrapper reali per ciascuna piattaforma abilitata sono

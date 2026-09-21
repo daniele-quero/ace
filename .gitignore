@@ -6,6 +6,8 @@ ace/traces/processed/*.json
 ace/state/*.json
 ace/state/applications/
 ace/state/*.lock
+ace/state/runtime/
+.test-work/
 
 !ace/proposals/.gitkeep
 !ace/proposals/applied/.gitkeep

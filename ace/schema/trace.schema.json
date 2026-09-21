@@ -29,12 +29,18 @@
     },
     "playbook_bullets_seen": {
       "type": "array",
-      "description": "Id dei bullet presenti nel contesto servito all'agente per questo task (prima del filtro sicurezza/quarantena, cioè quelli effettivamente iniettati).",
+      "description": "Id dei bullet effettivamente presentati all'agente per questo task, dopo il filtro di sicurezza/quarantena. Devono essere un sottoinsieme di playbook_bullets_selected quando la trace è catturata dal runtime mediated.",
       "items": { "type": "string" }
+    },
+    "playbook_bullets_selected": {
+      "type": "array",
+      "description": "Id selezionati deterministicamente dal manifest di delega. In modalità mediated, cited deve essere un sottoinsieme di seen e seen un sottoinsieme di selected.",
+      "items": { "type": "string" },
+      "uniqueItems": true
     },
     "playbook_bullets_cited": {
       "type": "array",
-      "description": "Id dei bullet che l'agente ha esplicitamente citato/applicato durante il task.",
+      "description": "Id dei bullet che l'agente ha esplicitamente citato/applicato durante il task. Devono essere un sottoinsieme di playbook_bullets_seen.",
       "items": { "type": "string" }
     },
     "actions": {

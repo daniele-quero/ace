@@ -10,18 +10,28 @@ const generator = require('./generate_ace_agents');
 const retrieval = require('./retrieval');
 
 const REQUIRED_RUNTIME_FILES = [
+  'ace/runtime-version.json',
   'ace/schema/bullet.schema.json',
   'ace/schema/trace.schema.json',
   'ace/config/thresholds.json',
   'ace/scripts/apply_delta.js',
   'ace/scripts/check_threshold.js',
   'ace/scripts/gate.js',
+  'ace/scripts/inspect_update.js',
   'ace/scripts/retrieval.js',
   'ace/scripts/update_counters.js',
   'ace/prompts/reflector.md',
   'ace/prompts/curator.md',
   'ace/prompts/warden.md',
   'playbooks/_global.md',
+];
+const REQUIRED_MEDIATED_FILES = [
+  'ace/scripts/prepare_delegation.js',
+  'ace/scripts/capture_trace.js',
+  'ace/scripts/finalize_task.js',
+  'ace/scripts/lib/runtime.js',
+  'ace/templates/mediated-adapter.md',
+  'ace/templates/mediated-ace-wrapper.md',
 ];
 
 function fail(errors, message) {
@@ -72,11 +82,32 @@ function run() {
 
   if (config) {
     const agents = loadAgentNames();
+    const mode = config.integration_mode || 'embedded';
+    if (mode === 'mediated') {
+      for (const relativePath of REQUIRED_MEDIATED_FILES) {
+        if (!fs.existsSync(path.join(REPO_ROOT, relativePath))) {
+          fail(errors, `Missing mediated runtime file: ${relativePath}`);
+        }
+      }
+    }
     for (const agent of agents) {
       const playbook = path.join(REPO_ROOT, 'playbooks', `${agent}.md`);
       if (!fs.existsSync(playbook)) fail(errors, `Missing scoped playbook: playbooks/${agent}.md`);
     }
     for (const platform of enabledPlatforms(config)) {
+      const globalTarget = mode === 'mediated'
+        ? path.join(REPO_ROOT, platform.agent_instructions_dir, 'ace-global.instructions.md')
+        : path.join(REPO_ROOT, platform.global_instructions_file);
+      if (!fs.existsSync(globalTarget)) {
+        fail(errors, `Missing generated global ACE instructions: ${path.relative(REPO_ROOT, globalTarget).replace(/\\/g, '/')}`);
+      }
+      if (mode === 'mediated') {
+        const platformGlobal = path.join(REPO_ROOT, platform.global_instructions_file);
+        if (fs.existsSync(platformGlobal)
+            && fs.readFileSync(platformGlobal, 'utf8').includes('<!-- ACE:BEGIN')) {
+          fail(errors, `Mediated mode must not inject ACE into platform global instructions: ${platform.global_instructions_file}`);
+        }
+      }
       for (const agent of agents) {
         const instructions = path.join(
           REPO_ROOT,
@@ -112,9 +143,18 @@ function run() {
   const placeholders = findPlaceholders(REPO_ROOT, [
     'ace/config/project.json',
     ...REQUIRED_RUNTIME_FILES,
+    ...(config && (config.integration_mode || 'embedded') === 'mediated'
+      ? REQUIRED_MEDIATED_FILES : []),
   ]);
   if (placeholders.length) {
     fail(errors, `Unresolved placeholders in: ${placeholders.join(', ')}`);
+  }
+  if (config && (config.integration_mode || 'embedded') === 'mediated') {
+    const ignorePath = path.join(REPO_ROOT, '.gitignore');
+    const ignore = fs.existsSync(ignorePath) ? fs.readFileSync(ignorePath, 'utf8') : '';
+    if (!/^ace\/state\/(?:runtime\/)?\s*$/m.test(ignore)) {
+      fail(errors, 'Runtime state must be ignored with ace/state/runtime/ or ace/state/.');
+    }
   }
 
   if (errors.length) {

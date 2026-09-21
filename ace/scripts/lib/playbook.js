@@ -23,17 +23,17 @@ function loadBulletSchema() {
 }
 
 // Unica fonte di verità per nomi/percorsi specifici del progetto in cui
-// ACE è stato installato (vedi INSTALL_PROMPT.md). Se un valore è ancora
+// ACE è stato installato (vedi INSTALL_PROMPT_EMBEDDED.md). Se un valore è ancora
 // un placeholder non risolto (installazione non completata), lo segnala
 // chi chiama tramite isUnresolvedPlaceholder(), non questa funzione: qui
 // ci limitiamo a leggere il file cosi' com'e'. Nota: nessun commento di
 // questo file contiene un token di placeholder letterale, altrimenti la
 // verifica finale dell'installazione (grep dei placeholder residui in
-// ace/ e playbooks/, vedi INSTALL_PROMPT.md Fase 10) darebbe un falso
+// ace/ e playbooks/, vedi INSTALL_PROMPT_EMBEDDED.md Fase 10) darebbe un falso
 // positivo permanente su scripts/lib/playbook.js.
 function loadProjectConfig() {
   if (!fs.existsSync(PROJECT_CONFIG_PATH)) {
-    throw new Error(`config/project.json non trovato in ${PROJECT_CONFIG_PATH}. Esegui prima il wizard di installazione (INSTALL_PROMPT.md).`);
+    throw new Error(`config/project.json non trovato in ${PROJECT_CONFIG_PATH}. Esegui prima il wizard di installazione appropriato.`);
   }
   const config = JSON.parse(fs.readFileSync(PROJECT_CONFIG_PATH, 'utf8'));
   validateProjectConfig(config);
@@ -123,6 +123,10 @@ function validateProjectConfig(config) {
   if (!config || config.version !== 1) {
     throw new Error('config/project.json deve avere version: 1.');
   }
+  const integrationMode = config.integration_mode || 'embedded';
+  if (!['embedded', 'mediated'].includes(integrationMode)) {
+    throw new Error('config/project.json: integration_mode deve essere embedded o mediated.');
+  }
   if (!config.team_name || isUnresolvedPlaceholder(config.team_name)) {
     throw new Error('config/project.json richiede team_name risolto.');
   }
@@ -180,6 +184,49 @@ function validateProjectConfig(config) {
     }
     if (!/^[a-z0-9][a-z0-9-]*$/.test(platform.runtime_prefix || '')) {
       throw new Error(`config/project.json: platforms.${platform.name}.runtime_prefix non valido.`);
+    }
+    const canonicalAgents = config.participating_agents;
+    if (platform.canonical_to_runtime !== undefined
+        && (integrationMode === 'mediated' || Object.keys(platform.canonical_to_runtime).length)) {
+      if (!platform.canonical_to_runtime
+          || typeof platform.canonical_to_runtime !== 'object'
+          || Array.isArray(platform.canonical_to_runtime)) {
+        throw new Error(`config/project.json: ${platform.name}.canonical_to_runtime deve essere un oggetto.`);
+      }
+      const keys = Object.keys(platform.canonical_to_runtime);
+      const missing = canonicalAgents.filter((agent) => !keys.includes(agent));
+      const extra = keys.filter((agent) => !canonicalAgents.includes(agent));
+      const values = keys.map((agent) => platform.canonical_to_runtime[agent]);
+      if (missing.length || extra.length
+          || values.some((value) => typeof value !== 'string' || !value.trim() || isUnresolvedPlaceholder(value))
+          || new Set(values).size !== values.length) {
+        throw new Error(`config/project.json: ${platform.name}.canonical_to_runtime deve mappare esattamente ogni id canonico a un runtime id univoco.`);
+      }
+    } else if (integrationMode === 'mediated') {
+      throw new Error(`config/project.json: ${platform.name}.canonical_to_runtime è obbligatorio in modalità mediated.`);
+    }
+    if (platform.orchestrator_entrypoints !== undefined
+        && (integrationMode === 'mediated'
+          || Object.values(platform.orchestrator_entrypoints || {}).some(Boolean))) {
+      const entrypoints = platform.orchestrator_entrypoints;
+      if (!entrypoints || typeof entrypoints !== 'object' || Array.isArray(entrypoints)
+          || !['project', 'ace'].every((key) => typeof entrypoints[key] === 'string'
+            && entrypoints[key].trim() && !isUnresolvedPlaceholder(entrypoints[key]))
+          || entrypoints.project === entrypoints.ace) {
+        throw new Error(`config/project.json: ${platform.name}.orchestrator_entrypoints richiede entrypoint project e ace distinti.`);
+      }
+      if (integrationMode === 'mediated'
+          && entrypoints.ace !== `${entrypoints.project}-ace`) {
+        throw new Error(`config/project.json: ${platform.name}.orchestrator_entrypoints.ace deve essere l'entrypoint project con suffisso -ace.`);
+      }
+      if (integrationMode === 'mediated'
+          && Object.values(platform.canonical_to_runtime).some(
+            (runtime) => runtime === entrypoints.project || runtime === entrypoints.ace,
+          )) {
+        throw new Error(`config/project.json: ${platform.name} non può mappare un worker su un entrypoint orchestratore.`);
+      }
+    } else if (integrationMode === 'mediated') {
+      throw new Error(`config/project.json: ${platform.name}.orchestrator_entrypoints è obbligatorio in modalità mediated.`);
     }
     if (!platform.tools || !['reflector', 'curator', 'warden'].every(
       (role) => Array.isArray(platform.tools[role]) && platform.tools[role].length,

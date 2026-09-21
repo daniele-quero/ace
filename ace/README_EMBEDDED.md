@@ -1,10 +1,38 @@
-# ACE: Agentic Context Engineering
+# ACE: Agentic Context Engineering — embedded integration
 
 ACE is a framework that turns execution into durable operating memory for a team of agents. Instead of embedding the same rules in every prompt and improvising them task by task, the team records what actually happened, reflects on it, turns repeated patterns into structured proposals, validates those proposals, and then applies only the decisions that have real evidence behind them.
 
 The result is a learning loop: `trace` files become evidence, `proposal` documents become candidate changes, and the `playbook` plus the generated `instructions` become the system's durable, reusable context.
 
 This repository is the runtime template for the cycle. It does not contain a real domain application or a real team. It contains the generic engine that can be installed into a host project and then grown by that project's own evidence.
+
+## Install, update, and migration
+
+Install creates ACE where it is absent; use
+[INSTALL_PROMPT_EMBEDDED.md](../INSTALL_PROMPT_EMBEDDED.md). Update advances an
+existing installation without changing its integration paradigm; use
+[UPDATE_PROMPT.md](../UPDATE_PROMPT.md). Migration changes embedded to
+mediated (or materially restructures project-owned agent behavior) and needs a
+separate plan and explicit approval.
+
+An embedded installation that predates `integration_mode` is **legacy
+embedded**. Its update should add `integration_mode: "embedded"` and refresh
+ACE only in the agents that already participate. That normalization preserves
+the paradigm and is not a migration; an updater must neither enroll additional
+agents nor convert the installation to mediated mode.
+
+For update inventory, the kit provides a read-only command:
+
+```text
+node <KIT_ROOT>/ace/scripts/inspect_update.js --target <TARGET_ROOT>
+```
+
+It reports detected mode, version and ownership evidence, conflicts, and
+required configuration normalization without writing (`write_performed:
+false`). `ace/runtime-version.json` defines the runtime version, ownership
+classes, and hashes for kit-owned files. Treat both as evidence for the update
+procedure, never as authority to overwrite project configuration, operational
+behavior, playbooks, traces, or state.
 
 ## The ACE cycle, top-down
 
@@ -43,7 +71,9 @@ ace/
 │   ├── update_counters.js       # sums evidence from traces into bullet counters
 │   ├── gate.js                  # mechanical validation before a write is allowed
 │   ├── apply_delta.js           # applies the signed-off delta to the `playbook`
+│   ├── inspect_update.js        # read-only update inventory and conflict report
 │   └── validate_install.js      # verifies the installed runtime is structurally complete
+├── runtime-version.json         # runtime version, ownership, and kit-file hashes
 ├── state/
 │   └── live-exclusions.json     # runtime exclusions while a bad rule is under review
 ├── traces/
@@ -54,7 +84,7 @@ ace/
 │   ├── families/
 │   ├── archive/
 │   └── <agent>.md
-└── README.md                   # human-facing overview of the lifecycle
+└── README_EMBEDDED.md          # embedded-integration lifecycle reference
 ```
 
 The important architectural point is that the runtime is deliberately split between the durable, reviewable `playbook` and the generated, compact `instructions` used by the active session.
@@ -342,5 +372,14 @@ The runtime is intentionally small, but each script has a narrow role. The follo
 - Purpose: verify the installation is structurally complete.
 - When: after installation or before a run that assumes the runtime is ready.
 - Why: fail early on missing or unresolved project configuration.
+
+### `inspect_update.js`
+
+- Purpose: inspect an existing installation against
+  `runtime-version.json`, reporting versions, ownership states, conflicts, and
+  configuration normalization without changing the target.
+- When: before planning an update and again after its validation.
+- Why: provide deterministic inventory evidence while leaving reconciliation
+  decisions to [UPDATE_PROMPT.md](../UPDATE_PROMPT.md).
 
 These scripts are intentionally narrow. They do not replace the human review step, and they do not all write state. The main pattern is: collect evidence -> count it -> propose -> decide -> gate -> human sign-off -> apply -> regenerate instructions.

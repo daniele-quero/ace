@@ -1,10 +1,13 @@
 # Come catturare una trace
 
 **Automatico dal workflow dell'orchestratore** (se il wizard ha inserito
-il passo dedicato — vedi [INSTALL_PROMPT.md](../../INSTALL_PROMPT.md)):
-l'orchestratore genera da solo le trace di ogni sessione come ultimo
-passo, usando il tool di scrittura della piattaforma subito dopo aver
-risposto. Se la tua
+il passo dedicato — vedi
+[INSTALL_PROMPT_EMBEDDED.md](../../INSTALL_PROMPT_EMBEDDED.md) o
+[INSTALL_PROMPT_MEDIATED.md](../../INSTALL_PROMPT_MEDIATED.md), secondo la
+modalità installata): in modalità embedded l'orchestratore partecipante genera
+la trace; in modalità mediata lo fa soltanto il wrapper opt-in `-ace`, mai il
+wrapper standard. La trace viene scritta come ultimo passo, subito dopo la
+risposta. Se la tua
 piattaforma non offre un hook di lifecycle nativo a cui agganciarsi (es.
 chat interattiva senza eventi post-risposta), questa automazione è un
 passo scritto esplicitamente nel prompt dell'orchestratore, non una

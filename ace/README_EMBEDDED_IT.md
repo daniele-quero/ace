@@ -1,10 +1,38 @@
-# ACE: Agentic Context Engineering
+# ACE: Agentic Context Engineering — integrazione embedded
 
 ACE è un framework che trasforma l'esecuzione in memoria operativa duratura per un team di agenti. Invece di riscrivere le stesse regole in ogni prompt e di improvvisare di task in task, il team registra ciò che è accaduto davvero, riflette su quei fatti, trasforma i pattern ricorrenti in `proposal` strutturate, valida tali proposte e applica solo le `decision` che hanno evidenza reale alle spalle.
 
 Il risultato è un loop di apprendimento: i file `trace` diventano evidenza, i documenti `proposal` diventano cambiamenti candidati e il `playbook` insieme alle `instructions` generate diventano il contesto duraturo e riutilizzabile del sistema.
 
 Questo repository è il template del runtime del ciclo. Non contiene un'applicazione di dominio reale né un team reale. Contiene invece il motore generico che può essere installato in un progetto ospite e poi crescere con l'evidenza del progetto stesso.
+
+## Installazione, aggiornamento e migrazione
+
+L'installazione crea ACE dove non è presente; usa
+[INSTALL_PROMPT_EMBEDDED.md](../INSTALL_PROMPT_EMBEDDED.md). L'aggiornamento
+porta avanti un'installazione esistente senza cambiarne il paradigma; usa
+[UPDATE_PROMPT.md](../UPDATE_PROMPT.md). La migrazione passa da embedded a
+mediated (o ristruttura materialmente il comportamento degli agenti posseduto
+dal progetto) e richiede un piano separato e un'approvazione esplicita.
+
+Un'installazione embedded precedente a `integration_mode` è **legacy
+embedded**. L'aggiornamento deve aggiungere `integration_mode: "embedded"` e
+aggiornare ACE solo negli agenti già partecipanti. Questa normalizzazione
+preserva il paradigma e non è una migrazione: non deve coinvolgere nuovi
+agenti né convertire l'installazione alla modalità mediated.
+
+Per l'inventario di aggiornamento il kit offre un comando di sola lettura:
+
+```text
+node <KIT_ROOT>/ace/scripts/inspect_update.js --target <TARGET_ROOT>
+```
+
+Riporta modalità rilevata, versioni, ownership, conflitti e normalizzazioni
+richieste senza scrivere (`write_performed: false`).
+`ace/runtime-version.json` definisce versione runtime, classi di ownership e
+hash dei file posseduti dal kit. Entrambi forniscono evidenza alla procedura di
+aggiornamento, ma non autorizzano a sovrascrivere configurazione, comportamento
+operativo, playbook, trace o stato del progetto.
 
 ## Il ciclo ACE, letto dall'alto verso il basso
 
@@ -43,7 +71,9 @@ ace/
 │   ├── update_counters.js       # somma le evidenze delle `trace` nei contatori dei bullet
 │   ├── gate.js                  # convalida meccanica prima che un write sia consentito
 │   ├── apply_delta.js           # applica il delta firmato al `playbook`
+│   ├── inspect_update.js        # inventario e conflitti di update, in sola lettura
 │   └── validate_install.js      # verifica che il runtime installato sia strutturalmente completo
+├── runtime-version.json         # versione runtime, ownership e hash dei file del kit
 ├── state/
 │   └── live-exclusions.json     # esclusioni runtime mentre una regola cattiva è sotto revisione
 ├── traces/
@@ -54,7 +84,7 @@ ace/
 │   ├── families/
 │   ├── archive/
 │   └── <agent>.md
-└── README.md                   # panoramica umana del ciclo
+└── README_EMBEDDED_IT.md       # riferimento del ciclo con integrazione embedded
 ```
 
 Il punto architetturale importante è che il runtime è volutamente separato tra il `playbook` duraturo e rivisitabile e le `instructions` generate, compatte e pronte per la sessione attiva.
@@ -342,5 +372,14 @@ Il runtime è intenzionalmente piccolo, ma ogni script ha un ruolo preciso. Ques
 - Scopo: verificare che l'installazione sia strutturalmente completa.
 - Quando: dopo l'installazione o prima di un run che assume che il runtime sia pronto.
 - Perché: fallire presto in presenza di configurazione mancante o non risolta.
+
+### `inspect_update.js`
+
+- Scopo: confrontare un'installazione esistente con
+  `runtime-version.json` e riportare versioni, stati di ownership, conflitti e
+  normalizzazioni senza modificare il target.
+- Quando: prima di pianificare un aggiornamento e di nuovo dopo la validazione.
+- Perché: offrire un inventario deterministico lasciando le decisioni di
+  riconciliazione a [UPDATE_PROMPT.md](../UPDATE_PROMPT.md).
 
 Questi script sono volutamente stretti. Non sostituiscono il passaggio di revisione umana e non tutti scrivono stato. Il pattern principale è: raccogli evidenza -> conta evidenza -> proponi -> decidi -> gate -> sign-off umano -> applica -> rigenera le istruzioni.

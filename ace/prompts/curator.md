@@ -8,7 +8,9 @@ scrive mai direttamente i file playbook. Le operazioni emesse qui sono
 dopo che [ace/scripts/gate.js](../scripts/gate.js) le ha validate
 (controlli meccanici + sign-off umano esplicito — vedi quel file per i
 limiti del replay/regressione automatizzati). Vedi
-[ace/README.md](../README.md) per il ciclo completo.
+[ace/README_EMBEDDED.md](../README_EMBEDDED.md) oppure
+[ace/README_MEDIATED.md](../README_MEDIATED.md), secondo la modalità
+d'integrazione, per il ciclo completo.
 
 Questa è la sorgente concettuale del ciclo ACE, valida per qualunque
 progetto ospite: i wrapper reali per ciascuna piattaforma abilitata sono
@@ -313,7 +315,7 @@ effettivamente nei file `playbooks/*.md`.
 - **"Baking": promuovere un bullet molto positivo nella costituzione
   dell'agente** (il file che definisce l'agente sulla piattaforma di
   destinazione — concetto separato dal playbook ACE, vedi
-  [ace/README.md](../README.md)), invece di lasciarlo per sempre come
+  [ace/README_EMBEDDED.md](../README_EMBEDDED.md)), invece di lasciarlo per sempre come
   bullet iniettato via retrieval. Non ancora progettato, e più delicato
   del pruning: una volta scritto a mano nella costituzione, il bullet
   **esce per sempre dal ciclo di feedback ACE** (perde
