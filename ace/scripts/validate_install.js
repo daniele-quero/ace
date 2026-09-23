@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const {
@@ -38,6 +39,40 @@ function fail(errors, message) {
   errors.push(message);
 }
 
+function normalizedSha256(file) {
+  return crypto.createHash('sha256')
+    .update(fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n'), 'utf8')
+    .digest('hex');
+}
+
+function validateManifestInventory(errors, config) {
+  const manifestPath = path.join(REPO_ROOT, 'ace', 'runtime-version.json');
+  let manifest;
+  try {
+    manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  } catch (error) {
+    fail(errors, `Cannot read runtime-version.json: ${error.message}`);
+    return;
+  }
+  const kitOwned = {
+    ...(manifest?.ownership?.kit_owned || {}),
+    ...(manifest?.ownership?.mode_specific?.[config?.integration_mode || 'embedded'] || {}),
+  };
+  if (!kitOwned || typeof kitOwned !== 'object' || Array.isArray(kitOwned)) {
+    fail(errors, 'runtime-version.json must declare ownership.kit_owned.');
+    return;
+  }
+  for (const [relativePath, expectedHash] of Object.entries(kitOwned)) {
+    if (!config?.integration_mode && REQUIRED_MEDIATED_FILES.includes(relativePath)) continue;
+    const absolutePath = path.join(REPO_ROOT, relativePath);
+    if (!fs.existsSync(absolutePath) || !fs.statSync(absolutePath).isFile()) {
+      fail(errors, `Missing manifest-declared runtime file: ${relativePath}`);
+    } else if (normalizedSha256(absolutePath) !== expectedHash) {
+      fail(errors, `Manifest hash mismatch for runtime file: ${relativePath}`);
+    }
+  }
+}
+
 function findPlaceholders(root, relativePaths) {
   const matches = [];
   for (const relativePath of relativePaths) {
@@ -63,6 +98,7 @@ function run() {
   } catch (error) {
     fail(errors, error.message);
   }
+  validateManifestInventory(errors, config);
 
   try {
     const thresholds = JSON.parse(fs.readFileSync(
@@ -144,7 +180,8 @@ function run() {
     'ace/config/project.json',
     ...REQUIRED_RUNTIME_FILES,
     ...(config && (config.integration_mode || 'embedded') === 'mediated'
-      ? REQUIRED_MEDIATED_FILES : []),
+      ? REQUIRED_MEDIATED_FILES.filter((relativePath) => !relativePath.startsWith('ace/templates/'))
+      : []),
   ]);
   if (placeholders.length) {
     fail(errors, `Unresolved placeholders in: ${placeholders.join(', ')}`);

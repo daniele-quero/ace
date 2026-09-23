@@ -129,14 +129,26 @@ additions.
 ## Execute and verify
 
 1. Execute every phase of the selected installation prompt.
-2. Run all generation, retrieval, registry, validation, and focused test
+2. For each enabled platform, derive the lifecycle runtime names from the
+   configured `runtime_prefix` exactly as the generator does:
+   `<runtime_prefix>/ace/reflector`, `<runtime_prefix>/ace/curator`, and
+   `<runtime_prefix>/ace/warden`. Materialize these exact names in every
+   orchestrator wrapper, persona, template-derived ACE block, delegate list,
+   and handoff; never refer to a bare role name or invent a display-name
+   variant. After generation, verify the declared orchestrator delegate matches
+   the generated lifecycle agent frontmatter `name`.
+3. Install only the `mode_specific` README files for the selected
+   `integration_mode` from `ace/runtime-version.json`: embedded receives the
+   embedded README pair, mediated receives the mediated pair. Do not copy the
+   other mode's README files.
+4. Run all generation, retrieval, registry, validation, and focused test
    commands required by that prompt.
-3. Reconstruct each effective contract from the resulting persona, wrapper,
+5. Reconstruct each effective contract from the resulting persona, wrapper,
    registry, instructions, and generated assets.
-4. Compare it with the baseline and classify every delta as:
+6. Compare it with the baseline and classify every delta as:
    `ACE-additive`, `representation-only`, `platform-required`,
    `user-approved`, or `unexplained-loss`.
-5. Do not claim success while any `unexplained-loss`, unresolved conflict,
+7. Do not claim success while any `unexplained-loss`, unresolved conflict,
    failed check, or unanswered decision remains.
 
 The final report must include both the prompt's file/command report and the

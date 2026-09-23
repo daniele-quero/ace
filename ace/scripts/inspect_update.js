@@ -209,10 +209,21 @@ function inspectMode(configResult, conflicts, normalization) {
   return 'mediated';
 }
 
+function ownedFiles(manifest, mode) {
+  const files = { ...(manifest.ownership?.kit_owned || {}) };
+  const modeKey = mode === 'legacy_embedded' || mode === 'current_embedded'
+    ? 'embedded'
+    : (mode === 'mediated' ? 'mediated' : null);
+  if (modeKey) Object.assign(files, manifest.ownership?.mode_specific?.[modeKey] || {});
+  return files;
+}
+
 function inspect(targetRoot) {
   const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
   const conflicts = [];
   const normalization = [];
+  const configResult = readJson(targetRoot, 'ace/config/project.json');
+  const mode = inspectMode(configResult, conflicts, normalization);
   const targetManifestResult = readJson(targetRoot, 'ace/runtime-version.json');
   const targetManifest = targetManifestResult.value;
   if (targetManifestResult.error) {
@@ -222,7 +233,7 @@ function inspect(targetRoot) {
     && !targetManifestResult.error
     && targetManifest?.manifest_version === manifest.manifest_version;
   const installedHashes = manifestCompatible
-    ? (targetManifest?.ownership?.kit_owned || {})
+    ? ownedFiles(targetManifest, mode)
     : {};
   let manifestState = 'missing';
   let versionRelation = 'unknown';
@@ -263,7 +274,7 @@ function inspect(targetRoot) {
     target_sha256: null,
   }];
 
-  for (const [relative, expectedHash] of Object.entries(manifest.ownership.kit_owned)
+  for (const [relative, expectedHash] of Object.entries(ownedFiles(manifest, mode))
     .sort(([left], [right]) => left.localeCompare(right))) {
     let state;
     let targetHash = null;
@@ -343,8 +354,6 @@ function inspect(targetRoot) {
     inventory.files = inventory.files.filter((file) => !kitOwnedPaths.has(file));
     return inventory;
   });
-  const mode = inspectMode(readJson(targetRoot, 'ace/config/project.json'), conflicts, normalization);
-
   conflicts.sort((left, right) => left.path.localeCompare(right.path)
     || left.reason.localeCompare(right.reason));
   normalization.sort((left, right) => left.field.localeCompare(right.field));

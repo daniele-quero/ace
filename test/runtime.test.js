@@ -181,6 +181,28 @@ test('generates and validates Copilot and Claude assets', (t) => {
   }
 });
 
+test('generated lifecycle names match the orchestrator contract', () => {
+  const generator = require(path.join(
+    KIT_ROOT,
+    'ace',
+    'scripts',
+    'generate_ace_agents.js',
+  ));
+
+  assert.equal(generator.runtimeName({ runtime_prefix: 'gh' }, 'reflector'), 'gh/ace/reflector');
+  assert.equal(generator.runtimeName({ runtime_prefix: 'cl' }, 'curator'), 'cl/ace/curator');
+  assert.equal(generator.runtimeName({ runtime_prefix: 'gh' }, 'warden'), 'gh/ace/warden');
+  for (const relative of [
+    'ace/templates/orchestrator-inline.md',
+    'ace/templates/orchestrator-persona.md',
+    'ace/templates/mediated-ace-wrapper.md',
+  ]) {
+    const content = fs.readFileSync(path.join(KIT_ROOT, relative), 'utf8');
+    assert.match(content, /__ACE_REFLECTOR_RUNTIME_NAME__/);
+    assert.match(content, /__ACE_WARDEN_RUNTIME_NAME__/);
+  }
+});
+
 test('legacy config without integration metadata remains embedded-compatible', (t) => {
   const { root } = setupProject();
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -662,6 +684,19 @@ test('mediated config rejects incomplete canonical runtime mappings', (t) => {
   assert.match(result.stderr, /canonical_to_runtime/);
 });
 
+test('installation validation rejects any missing manifest-declared runtime file', (t) => {
+  const { root } = setupProject({ claude: false });
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.rmSync(path.join(root, 'ace', 'templates', 'persona-wrapper-body.md'));
+
+  const result = failingCommand(root, 'validate_install.js');
+
+  assert.match(
+    result.stderr,
+    /Missing manifest-declared runtime file: ace\/templates\/persona-wrapper-body\.md/,
+  );
+});
+
 test('update inspection identifies current embedded ownership without writing', (t) => {
   const { root } = setupProject();
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -681,6 +716,19 @@ test('update inspection identifies current embedded ownership without writing', 
   )).action, 'preserve');
   assert.equal(fs.readFileSync(configPath, 'utf8'), before);
   assert.deepEqual(snapshotTree(root), treeBefore);
+});
+
+test('update inspection inventories only the selected mode README files', (t) => {
+  const { root } = setupProject({ claude: false, integrationMode: 'mediated' });
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+  const report = inspectTarget(root);
+  const paths = report.kit_owned.map((item) => item.path);
+
+  assert.ok(paths.includes('ace/README_MEDIATED.md'));
+  assert.ok(paths.includes('ace/README_MEDIATED_IT.md'));
+  assert.equal(paths.includes('ace/README_EMBEDDED.md'), false);
+  assert.equal(paths.includes('ace/README_EMBEDDED_IT.md'), false);
 });
 
 test('update inspection identifies legacy embedded config and protected project data', (t) => {
@@ -862,6 +910,8 @@ test('update prompt defines the complete safe update contract', () => {
     'dedicated question tool',
     'read-only/report mode',
     'node <KIT_ROOT>/ace/scripts/inspect_update.js --target <TARGET_ROOT>',
+    'Run this exact command as soon as the roots have been verified',
+    'complete kit-owned file inventory',
     'never run or trust a target copy',
     'newer-installed/downgrade conflict',
     'grouped **`unverified`** set',
@@ -900,6 +950,8 @@ test('embedded installation prompt covers required interactive branches', () => 
     'Unexplained behavioral loss blocks',
     'generate_ace_agents.js --check',
     'validate_install.js',
+    'ownership.kit_owned',
+    'Do not install a hand-picked subset',
   ]) {
     assert.match(prompt, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
@@ -922,6 +974,7 @@ test('mediated installer covers the runtime contract', () => {
     'selected model and provider',
     'preservation matrix',
     'Unexplained behavioral loss blocks',
+    'Do not install a hand-picked subset',
   ]) {
     assert.match(prompt, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
@@ -949,6 +1002,7 @@ test('operator skills route operations and preserve effective contracts', () => 
         'Never use the target',
         'Harness and model are independent',
         'Reconcile with an explicit matrix',
+        'Run this exact command as soon as the roots have been verified',
         'runtime and learned state byte-for-byte',
         'behavioral loss is unexplained',
       ],

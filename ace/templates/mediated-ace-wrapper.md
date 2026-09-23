@@ -4,7 +4,7 @@ Expose this wrapper only at the configured `<standard-runtime-name>-ace`
 entrypoint. Keep the standard entrypoint and shared canonical persona ACE-free.
 Load that same persona here, preserving compatible platform metadata, tools,
 model, normal delegates, and project guardrails. Expose the generated
-reflector as an additional delegate.
+reflector runtime `__ACE_REFLECTOR_RUNTIME_NAME__` as an additional delegate.
 
 For each bounded delegation, assign a stable task id and run
 `prepare_delegation.js --task-id <id> --agent <canonical-id> --platform
@@ -19,6 +19,8 @@ Return the selected, seen, and cited lesson ids. Cited ids must be a subset of
 seen ids, and seen ids must be a subset of the manifest's selected ids.
 Collect and verify the result, then use `capture_trace.js` for every actual
 contributor and `finalize_task.js` once. If the reflector threshold is reached,
-invoke reflector and preserve the curator, warden, deterministic gate, and
-explicit human sign-off chain. Never write platform-global instructions,
+invoke `__ACE_REFLECTOR_RUNTIME_NAME__`, which delegates to the generated
+curator runtime `__ACE_CURATOR_RUNTIME_NAME__`; preserve the generated warden
+runtime `__ACE_WARDEN_RUNTIME_NAME__`, deterministic gate, and explicit human
+sign-off chain. Never write platform-global instructions,
 modify workers, or bypass the capture/finalize helpers.
