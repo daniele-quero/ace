@@ -67,6 +67,32 @@ Correlate identity from runtime name, description, role, source links, and
 delegation relationships. If two platform files conflict materially, show the
 conflict and ask which behavior is canonical before editing either.
 
+### Record the effective behavioral contract
+
+Before transforming any operational agent, record its effective contract
+across wrappers, personas, inline bodies, registries, generators, referenced
+instructions, and handoffs. Include:
+
+- harness, runtime identity, description, selected model and provider, tools,
+  delegates, handoffs, invocation state, and argument hints;
+- required inputs, preconditions, ordered workflow, branching, parallelism,
+  context isolation, and iteration limits;
+- delegation payloads, return contracts, success criteria, verification,
+  fallbacks, escalation, and stop conditions;
+- safety gates, prohibited actions, authorized alternatives, file scope, Git
+  side effects, and user approvals.
+
+Treat the harness, model provider, and selected model as separate dimensions.
+Selecting one harness may require different files, frontmatter fields, tool
+names, or delegate syntax, but it does not authorize a model change when that
+harness supports the original model. If it does not, prove the incompatibility
+and obtain an explicit model choice before continuing.
+
+Create a preservation matrix mapping every source contract element to its
+post-install destination. A persona conversion is a relocation, not a summary:
+preserve conditions, ordering, payloads, parallelism, fallback paths, negative
+gates, and both sides of every inter-agent contract.
+
 ## Phase 2 - Detect platforms and ask installation scope
 
 Detect GitHub Copilot from `.github/agents`, Copilot instructions, or an
@@ -185,6 +211,9 @@ lifecycle agents themselves use source personas.
 4. Add an explicit instruction to read the generated scoped ACE instruction
    before work.
 5. Preserve frontmatter, tools, delegates, handoffs, and unrelated body text.
+   Preserve the selected model independently of the selected platform harness;
+   translate only the target platform's representation unless the user
+   explicitly approves a model change.
 6. Do not create `docs/agent-personas/`.
 
 ## Phase 6 - Install the runtime
@@ -280,6 +309,12 @@ Verify all of the following:
 - every configured agent name is unique;
 - generated ACE wrappers exist only for selected platforms;
 - all wrapper source links resolve;
+- every pre-install behavioral contract element has an explicit preserved,
+  representation-only, platform-required, or user-approved destination;
+- no workflow condition, ordering constraint, delegation payload, fallback,
+  safety gate, or authorized alternative was weakened or dropped;
+- harness conversions preserve selected models and effective capabilities when
+  supported by the target harness;
 - orchestrator delegation reaches reflector, reflector reaches curator, and
   curator reaches warden;
 - warden has a dedicated question tool;
@@ -290,5 +325,6 @@ Verify all of the following:
 
 Present a final table of created/modified files, chosen platforms, chosen
 orchestrator, participating agents, persona choice, commands run, and any
-remaining manual action. Do not commit or push unless the user separately asks
-for it.
+remaining manual action. Also present the preservation matrix and every
+intentional behavioral difference. Unexplained behavioral loss blocks
+success. Do not commit or push unless the user separately asks for it.

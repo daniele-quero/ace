@@ -58,6 +58,30 @@ Correlate cross-platform identity by runtime name, description, source links,
 role, and delegation—not filename alone. Record which files are generated and
 their canonical source. This phase is read-only.
 
+### Effective behavioral contract
+
+For every operational agent and entry point, also record the effective
+behavioral contract across wrappers, personas, inline bodies, registries,
+generators, referenced instructions, and handoffs:
+
+- harness, runtime identity, description, selected model and provider, tools,
+  delegates, handoffs, invocation state, and argument hints;
+- required inputs, preconditions, ordered workflow, branching, parallelism,
+  context isolation, and iteration limits;
+- delegation payloads and return contracts, verification, fallbacks,
+  escalation, stop conditions, safety gates, prohibited actions, authorized
+  alternatives, and side effects.
+
+Treat harness, model provider, and selected model as independent dimensions.
+Consolidating onto one harness may translate file layout, frontmatter schema,
+tool nomenclature, delegate syntax, and links, but must preserve each selected
+model and effective capability when the target harness supports them. If it
+does not, prove the incompatibility and obtain an explicit choice.
+
+Build a preservation matrix mapping every source contract element to its
+post-install source. Structural relocation is not permission to summarize or
+weaken project behavior.
+
 ## Phase 2 — platforms and orchestrator
 
 Ask which detected platforms to install: all, each individual platform, or a
@@ -103,8 +127,10 @@ Identify its behavioral source of truth.
 
 Rebuild/preserve the **standard wrapper** under exactly its existing runtime
 name. It loads the canonical persona with a real file-reading tool and retains
-all existing runtime metadata and platform guardrails. Verify before continuing
-that ordinary behavior and delegation are unchanged.
+all existing runtime metadata and platform guardrails. Preserve the selected
+model independently of the selected harness; translate only representation
+details required by that harness. Verify before continuing that ordinary
+behavior and delegation are unchanged.
 
 ### New orchestrator
 
@@ -216,6 +242,11 @@ Prove all of the following from files, generated output, and diffs:
 - one `-ace` wrapper exists per selected platform and loads the same persona;
 - workers and their registry records are untouched;
 - standard invocation cannot enter ACE; `-ace` invocation owns the full cycle;
+- every baseline contract element has an explicit preserved,
+  representation-only, platform-required, or user-approved destination;
+- no workflow condition, ordering constraint, delegation payload, fallback,
+  safety gate, authorized alternative, model, or effective capability was
+  silently weakened or dropped;
 - mappings use configured canonical ids and real worker runtime names;
 - every delegation preparation supplies the selected platform explicitly;
 - scoped retrieval reaches the wrapper without permanent worker injection;
@@ -228,4 +259,6 @@ Prove all of the following from files, generated output, and diffs:
 
 Present a final table of created/modified files, platforms, canonical persona,
 standard and ACE runtime names, mapped workers/families, commands and results,
-and remaining manual action. Do not commit or push unless separately asked.
+and remaining manual action. Also present the preservation matrix and every
+intentional behavioral difference. Unexplained behavioral loss blocks
+success. Do not commit or push unless separately asked.
