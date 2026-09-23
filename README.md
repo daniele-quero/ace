@@ -66,6 +66,14 @@ permission to overwrite project-owned files or learned/runtime state. The
 complete reconciliation and validation rules remain in `UPDATE_PROMPT.md` and
 are intentionally not duplicated here.
 
+The manifest's `ownership.mode_specific` section lists documentation by
+integration mode. An installation copies only the README pair for its selected
+mode: `README_EMBEDDED(.IT).md` for embedded or `README_MEDIATED(.IT).md` for
+mediated. The lifecycle wrappers generated for an enabled platform are named
+exactly `<runtime_prefix>/ace/reflector`, `<runtime_prefix>/ace/curator`, and
+`<runtime_prefix>/ace/warden`; orchestrator delegates must use those exact
+names rather than bare role labels.
+
 ## Operator skills
 
 The kit provides two project-level operator skills:

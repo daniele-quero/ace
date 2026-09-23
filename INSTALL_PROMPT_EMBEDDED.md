@@ -218,15 +218,30 @@ lifecycle agents themselves use source personas.
 
 ## Phase 6 - Install the runtime
 
-1. Copy `KIT_ROOT/ace/` to `TARGET_ROOT/ace/`, excluding:
+1. Read `KIT_ROOT/ace/runtime-version.json` before copying. Its
+   `ownership.kit_owned` paths plus `ownership.mode_specific.embedded` are the
+   closed, mandatory framework inventory: create each parent directory and
+   copy every listed regular file, including all scripts, `scripts/lib`
+   helpers, schemas, prompts, templates, the embedded README pair, and the
+   update inspector. Do not install a hand-picked subset, and do not copy
+   either mediated README.
+2. Copy `KIT_ROOT/ace/` to `TARGET_ROOT/ace/`, excluding:
    - `ace/config/project.json` if one somehow exists in the kit checkout;
    - temporary files, test fixtures, generated wrappers, and runtime output.
-2. Copy the empty `KIT_ROOT/playbooks/` skeleton to
+   The destination `ace/runtime-version.json` must be copied verbatim only
+   after every other kit-owned runtime file is in place, so it is an accurate
+   statement of the installed inventory.
+3. Before any project-specific configuration or generation, compare the
+   destination against that manifest and stop if any manifest-declared file is
+   absent, non-regular, or has a different normalized SHA-256. A missing
+   script, schema, prompt, template, or library is an incomplete installation,
+   not an optional feature.
+4. Copy the empty `KIT_ROOT/playbooks/` skeleton to
    `TARGET_ROOT/playbooks/`.
-3. Do not copy traces, proposals, decisions, learned bullets, counters, or
+5. Do not copy traces, proposals, decisions, learned bullets, counters, or
    state from any other project. The kit directories must be empty except for
    documentation, `.gitkeep`, and the initial empty state file.
-4. Copy `ace/config/project.template.json` to
+6. Copy `ace/config/project.template.json` to
    `ace/config/project.json` and materialize:
    - `team_name`;
    - `provisional_evaluator`;
@@ -237,18 +252,18 @@ lifecycle agents themselves use source personas.
    - enabled selected platforms;
    - actual destination paths;
    - verified runtime prefix, model, and ACE tools for each platform.
-5. Tool arrays must match capabilities actually available in the destination.
+7. Tool arrays must match capabilities actually available in the destination.
    Reflector and curator need read/write/search/shell/delegation. Warden needs
    read/shell/dedicated-question. If any capability is missing, report the
    specific blocker and stop before generating a wrapper that claims it.
-6. Create an empty `playbooks/<canonical-id>.md` for the orchestrator and each
+8. Create an empty `playbooks/<canonical-id>.md` for the orchestrator and each
    participating agent, following the format comment in `_global.md`.
-7. Create an empty `playbooks/families/<family>.md` for every configured
+9. Create an empty `playbooks/families/<family>.md` for every configured
    family.
-8. Keep canonical ids filesystem-safe and unique. If a discovered runtime name
+10. Keep canonical ids filesystem-safe and unique. If a discovered runtime name
    is namespaced, use the stable local id rather than slashes as the scope
    filename.
-9. Merge the ACE runtime-data rules from `KIT_ROOT/.gitignore` into the
+11. Merge the ACE runtime-data rules from `KIT_ROOT/.gitignore` into the
    destination `.gitignore` without replacing existing rules. Preserve the
    `.gitkeep` exceptions and verify with `git status` that `project.json`,
    traces, proposals, applied batches, and state JSON are ignored.
@@ -258,13 +273,19 @@ lifecycle agents themselves use source personas.
 1. Run `node ace/scripts/generate_ace_agents.js`.
 2. Verify the generated `reflector -> curator -> warden` delegation chain on
    every selected platform.
-3. Add the platform-specific reflector runtime name to the chosen
+3. Derive each generated lifecycle runtime name from the enabled platform's
+   `runtime_prefix` exactly as `generate_ace_agents.js` does:
+   `<runtime_prefix>/ace/reflector`, `<runtime_prefix>/ace/curator`, and
+   `<runtime_prefix>/ace/warden`. Materialize these exact strings in every
+   orchestrator persona/wrapper, ACE block, delegate list, and handoff. Do not
+   use bare role names, display labels, or a name from another platform.
+4. Add the derived platform-specific reflector runtime name to the chosen
    orchestrator's declared delegates/agents using the destination's canonical
    registry when one exists.
-4. Ensure the orchestrator owns trace writing, counter updates, threshold
+5. Ensure the orchestrator owns trace writing, counter updates, threshold
    checks, and reflector invocation. Participating agents only return trace
    elements unless the destination explicitly assigns them a stronger role.
-5. If a new orchestrator was requested, create its selected-platform wrappers
+6. If a new orchestrator was requested, create its selected-platform wrappers
    and register it through the destination's canonical mechanism.
 
 ## Phase 8 - Integrate global instructions
@@ -303,11 +324,18 @@ check commands. Do not install a new build/lint tool solely for ACE.
 
 Verify all of the following:
 
+- every path declared by `ace/runtime-version.json` under
+  `ownership.kit_owned` is a regular file with the declared normalized SHA-256;
+- no required script, schema, prompt, template, or `scripts/lib` dependency
+  was omitted;
 - `ace/config/project.json` contains no unresolved `__PLACEHOLDER__`;
 - selected agents and only selected agents have scoped playbooks and ACE
   integration;
 - every configured agent name is unique;
 - generated ACE wrappers exist only for selected platforms;
+- every declared lifecycle delegate exactly matches the generated lifecycle
+  wrapper frontmatter `name` for that platform;
+- only `ownership.mode_specific.embedded` README files were installed;
 - all wrapper source links resolve;
 - every pre-install behavioral contract element has an explicit preserved,
   representation-only, platform-required, or user-approved destination;

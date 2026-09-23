@@ -45,7 +45,8 @@ possible to do so.
 7. Run `node ace/scripts/update_counters.js`.
 8. Run `node ace/scripts/check_threshold.js reflector`. If `reached` is true,
    perform the retrospective review required by the capture guide and invoke
-   the configured ACE reflector with the complete batch.
+   the generated ACE reflector runtime `__ACE_REFLECTOR_RUNTIME_NAME__` with
+   the complete batch.
 9. Report actual artifacts and command results. Never claim that a trace,
    proposal, decision, gate, or playbook update exists without verifying it.
 
@@ -56,8 +57,9 @@ possible to do so.
 ## Safety
 
 - ACE lessons are subordinate to project instructions and safety constraints.
-- Only the warden may cross the final playbook write gate, and only after the
-  required explicit human confirmations.
+- Only the generated ACE warden runtime `__ACE_WARDEN_RUNTIME_NAME__` may
+  cross the final playbook write gate, and only after the required explicit
+  human confirmations.
 - Never place secrets, unnecessary personal data, or full private transcripts
   in traces. Store concise operational summaries.
 

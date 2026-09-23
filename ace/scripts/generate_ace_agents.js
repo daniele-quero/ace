@@ -136,4 +136,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { ROLES, render, run };
+module.exports = { ROLES, runtimeName, render, run };

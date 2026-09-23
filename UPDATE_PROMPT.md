@@ -82,18 +82,29 @@ record the ambiguity, and ask before changing it.
 1. Resolve and canonicalize local `KIT_ROOT` and `TARGET_ROOT`; verify they are
    different directories and that `TARGET_ROOT` is the repository being
    updated.
-2. Read all applicable destination repository instructions before any write.
-3. Inspect `git status`, including staged, unstaged, untracked, conflicted, and
+2. **Run this exact command as soon as the roots have been verified, before
+   reading any target file, Git status, or destination instruction:**
+
+   ```text
+   node <KIT_ROOT>/ace/scripts/inspect_update.js --target <TARGET_ROOT>
+   ```
+
+   Run it from `KIT_ROOT`, never from an installed target copy. Preserve its
+   `write_performed: false` report as the authoritative initial inventory of
+   installed/current versions, the complete kit-owned file inventory, managed
+   merges, protected data, conflicts, and required normalization.
+3. Read all applicable destination repository instructions before any write.
+4. Inspect `git status`, including staged, unstaged, untracked, conflicted, and
    ignored ACE paths. Save the baseline status and relevant diffs for later
    comparison.
-4. Detect unresolved merges/rebases and conflict markers. Do not update a
+5. Detect unresolved merges/rebases and conflict markers. Do not update a
    conflicted path. If a conflict touches the update, stop and identify it;
    otherwise preserve it and avoid that path.
-5. Locate the installed ACE root, materialized project configuration,
+6. Locate the installed ACE root, materialized project configuration,
    playbooks, lifecycle agents, generated retrieval blocks, wrappers,
    personas, registries/generators, and runtime-data directories.
-6. If no existing ACE installation is evidenced, stop: that is an install.
-7. Do not stash, reset, checkout, clean, stage, commit, or reformat pre-existing
+7. If no existing ACE installation is evidenced, stop: that is an install.
+8. Do not stash, reset, checkout, clean, stage, commit, or reformat pre-existing
    changes. Record which update paths were already dirty and preserve those
    edits during reconciliation.
 

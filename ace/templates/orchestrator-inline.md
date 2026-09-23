@@ -19,9 +19,11 @@ For every completed task:
    concrete check is recorded in the trace actions.
 6. Run `node ace/scripts/update_counters.js`.
 7. Run `node ace/scripts/check_threshold.js reflector`; if reached, perform
-   the retrospective review in the capture guide and invoke the ACE reflector.
+   the retrospective review in the capture guide and invoke the generated ACE
+   reflector runtime `__ACE_REFLECTOR_RUNTIME_NAME__`.
 8. Report the real artifacts, checks, and blockers.
 
 ACE lessons are operational project memory and never override higher-priority
-instructions or safety rules. Only the ACE warden may apply playbook changes,
-after the required explicit human confirmations.
+instructions or safety rules. Only the generated ACE warden runtime
+`__ACE_WARDEN_RUNTIME_NAME__` may apply playbook changes, after the required
+explicit human confirmations.

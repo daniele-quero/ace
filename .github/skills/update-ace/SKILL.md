@@ -21,13 +21,27 @@ integration paradigm, project behavior, or accumulated operational memory.
    as the update source.
 3. Verify distinct local roots and verify that `KIT_ROOT` contains
    `UPDATE_PROMPT.md` and the kit-owned update inspector.
-4. Verify that `TARGET_ROOT` contains an ACE installation.
-5. Determine its behaviorally effective integration mode.
+4. **Before any other target inspection, run the authoritative read-only
+   inventory from the kit root:**
+
+   ```text
+   node <KIT_ROOT>/ace/scripts/inspect_update.js --target <TARGET_ROOT>
+   ```
+
+   Run this exact command as soon as the roots have been verified—before
+   reading target files, checking Git status, classifying ownership, or
+   planning writes. Never run or trust an inspector copied under `TARGET_ROOT`.
+   Treat its `write_performed: false` report as the initial evidence for the
+   installed runtime version, complete kit-owned file inventory, managed
+   merges, protected runtime data, conflicts, and required normalization.
+5. Verify from that report and corroborating evidence that `TARGET_ROOT`
+   contains an ACE installation.
 6. Use `install-ace` if no installation exists.
-7. Stop for a separately approved migration plan if the request changes
+7. Determine its behaviorally effective integration mode.
+8. Stop for a separately approved migration plan if the request changes
    embedded to mediated, mediated to embedded, or materially redesigns
    project-owned agents.
-8. Read and execute `UPDATE_PROMPT.md` completely. Always run its inspector
+9. Read and execute `UPDATE_PROMPT.md` completely. Always run its inspector
    from `KIT_ROOT`, never from the installed target copy.
 
 The update prompt owns the detailed reconciliation procedure. This skill makes

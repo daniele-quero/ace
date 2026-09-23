@@ -159,6 +159,17 @@ Do not add ACE content to the canonical persona or standard wrapper.
 
 ## Phase 5 — install clean runtime state
 
+Read `KIT_ROOT/ace/runtime-version.json` first. Its `ownership.kit_owned` paths
+plus `ownership.mode_specific.mediated` are the closed, mandatory framework
+inventory: copy every listed regular file into `TARGET_ROOT`, including
+scripts, `scripts/lib` helpers, schemas, prompts, templates, the mediated
+README pair, and the update inspector. Do not install a hand-picked subset,
+and do not copy either embedded README.
+Copy the manifest
+verbatim only after all other kit-owned files, then compare every declared
+destination path and normalized SHA-256 with it; stop on a missing,
+non-regular, or mismatched file.
+
 Copy `KIT_ROOT/ace/` and the empty `KIT_ROOT/playbooks/` skeleton, excluding
 `project.json`, generated wrappers, fixtures, temporary files, traces,
 proposals, decisions, learned bullets, counters, and runtime output.
@@ -193,6 +204,13 @@ platform:
 - warden has the dedicated question capability;
 - only the ACE wrapper has lifecycle delegation;
 - standard orchestrator and all workers remain unchanged.
+
+Derive the generated lifecycle names from the selected platform's
+`runtime_prefix` exactly as `generate_ace_agents.js` does:
+`<runtime_prefix>/ace/reflector`, `<runtime_prefix>/ace/curator`, and
+`<runtime_prefix>/ace/warden`. The ACE wrapper must declare and invoke those
+exact generated names, never a bare role name, display label, or another
+platform's lifecycle name.
 
 The ACE wrapper must implement:
 
@@ -237,6 +255,12 @@ Fix every non-zero result. Do not install unrelated tooling.
 
 Prove all of the following from files, generated output, and diffs:
 
+- every `ace/runtime-version.json` `ownership.kit_owned` path is a regular
+  file with its declared normalized SHA-256; no script, schema, prompt,
+  template, or `scripts/lib` dependency may be absent;
+- only `ownership.mode_specific.mediated` README files were installed;
+- every lifecycle delegate exactly matches the generated lifecycle wrapper
+  frontmatter `name` for that platform;
 - one canonical orchestrator persona exists and contains no ACE behavior;
 - the standard wrapper retains exactly the prior runtime name and normal route;
 - one `-ace` wrapper exists per selected platform and loads the same persona;
