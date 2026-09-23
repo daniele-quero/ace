@@ -115,6 +115,28 @@ Read both kit and destination versions of:
 - registries, manifests, generators, and sync scripts that own agent files;
 - playbooks, traces, proposals, decisions, counters, and state locations.
 
+### Pre-update effective contract
+
+For every operational agent and entry point, capture its effective contract
+across wrappers, personas, inline bodies, registries, generators, referenced
+instructions, and handoffs. Record:
+
+- harness, runtime identity, description, selected model and provider, tools,
+  delegates, handoffs, invocation state, and argument hints;
+- required inputs, preconditions, ordered workflow, branching, parallelism,
+  context isolation, and iteration limits;
+- delegation payloads, return contracts, success criteria, verification,
+  fallbacks, escalation, and stop conditions;
+- safety gates, prohibited actions, authorized alternatives, file scope, Git
+  side effects, and user approvals.
+
+Treat harness, model provider, and selected model as independent contract
+dimensions. A platform representation change may require different paths,
+frontmatter fields, tool names, or delegate syntax. It does not authorize
+changing a supported selected model or effective capability. If a previous
+selection is no longer supported, prove the incompatibility and obtain an
+explicit choice before substituting it.
+
 Inventory logical agents by canonical id, platform runtime name, wrapper,
 persona/source of truth, tools, delegates/handoffs, model, user-facing state,
 and registry owner. For mediated installations, separately identify the
@@ -297,6 +319,11 @@ generated instruction references required by the current version.
 Do not replace an operational persona with a stock template. Templates are a
 contract/reference for the ACE portion, not authority over project behavior.
 Do not duplicate an ACE section when one can be structurally merged.
+Do not compress or paraphrase project behavior during structural relocation.
+Preserve conditions, ordering, parallelism, isolation, retry limits, payloads,
+return contracts, fallbacks, escalation, negative gates, and the authorized
+alternative associated with each prohibition. Verify producer and consumer
+sides of every cross-agent flag or artifact.
 
 For embedded mode, update ACE integration in exactly the already participating
 agents and orchestrator. Do not enroll additional agents.
@@ -403,6 +430,12 @@ Validate specifically that:
   installed/current version evidence;
 - wrappers resolve their personas and generated instruction files;
 - runtime names, mappings, tools, delegates, models, and handoffs remain valid;
+- every pre-update behavioral contract element has an explicit preserved,
+  representation-only, framework-required, or user-approved post-update
+  destination;
+- no workflow condition, ordering constraint, delegation payload, fallback,
+  safety gate, authorized alternative, selected model, or effective capability
+  was silently weakened or dropped;
 - embedded participation is unchanged, or mediated standard/ACE routes remain
   distinct and workers remain unchanged;
 - reflector delegates to curator, curator delegates to warden, and warden has
@@ -446,10 +479,12 @@ Also report:
 - enabled platforms, canonical orchestrator, participating/mapped agents,
   families, and standard/ACE runtime names where applicable;
 - every command run and its exit result;
+- a pre/post behavioral preservation matrix and every intentional difference;
 - pre-existing dirty/conflicted paths left intact;
 - runtime-data preservation checks;
 - every dedicated-tool decision and outcome;
 - remaining manual actions, blockers, and unanswered questions.
 
 Do not claim success while a required check fails, a conflict is unresolved,
-or a required decision is unanswered.
+or a required decision is unanswered. Unexplained behavioral loss blocks
+success.

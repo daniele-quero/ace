@@ -870,6 +870,10 @@ test('update prompt defines the complete safe update contract', () => {
     'final kit-owned write',
     'Verify byte-for-byte equality',
     'no required update remains',
+    'Pre-update effective contract',
+    'selected model and provider',
+    'pre/post behavioral preservation matrix',
+    'Unexplained behavioral loss blocks',
     'Do not claim success while a required check fails',
   ]) {
     assert.match(
@@ -890,6 +894,10 @@ test('embedded installation prompt covers required interactive branches', () => 
     'Ask about personas',
     'orchestrator-persona.md',
     'orchestrator-inline.md',
+    'effective behavioral contract',
+    'selected model as separate dimensions',
+    'preservation matrix',
+    'Unexplained behavioral loss blocks',
     'generate_ace_agents.js --check',
     'validate_install.js',
   ]) {
@@ -910,7 +918,53 @@ test('mediated installer covers the runtime contract', () => {
     'finalize_task.js',
     'ace-global.instructions.md',
     'standard orchestrator and all workers remain unchanged',
+    'Effective behavioral contract',
+    'selected model and provider',
+    'preservation matrix',
+    'Unexplained behavioral loss blocks',
   ]) {
     assert.match(prompt, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+});
+
+test('operator skills route operations and preserve effective contracts', () => {
+  const skills = [
+    {
+      file: '.github/skills/install-ace/SKILL.md',
+      name: 'install-ace',
+      required: [
+        'INSTALL_PROMPT_EMBEDDED.md',
+        'INSTALL_PROMPT_MEDIATED.md',
+        'Never treat the user-level skill directory or `TARGET_ROOT` as the kit',
+        'Keep harness and model independent',
+        'Build a preservation matrix',
+        'unexplained-loss',
+      ],
+    },
+    {
+      file: '.github/skills/update-ace/SKILL.md',
+      name: 'update-ace',
+      required: [
+        'UPDATE_PROMPT.md',
+        'Never use the target',
+        'Harness and model are independent',
+        'Reconcile with an explicit matrix',
+        'runtime and learned state byte-for-byte',
+        'behavioral loss is unexplained',
+      ],
+    },
+  ];
+
+  for (const skill of skills) {
+    const content = fs.readFileSync(path.join(KIT_ROOT, skill.file), 'utf8');
+    assert.match(content, new RegExp(`^---\\r?\\nname: ${skill.name}\\r?\\n`, 'm'));
+    assert.match(content, /^description: .+\r?$/m);
+    for (const required of skill.required) {
+      assert.match(
+        content,
+        new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+        `${skill.file} missing contract text: ${required}`,
+      );
+    }
   }
 });

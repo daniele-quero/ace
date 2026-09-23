@@ -66,6 +66,100 @@ permission to overwrite project-owned files or learned/runtime state. The
 complete reconciliation and validation rules remain in `UPDATE_PROMPT.md` and
 are intentionally not duplicated here.
 
+## Operator skills
+
+The kit provides two project-level operator skills:
+
+- [install-ace](.github/skills/install-ace/SKILL.md) routes clean
+  installations to the embedded or mediated prompt and requires a pre/post
+  behavioral preservation check;
+- [update-ace](.github/skills/update-ace/SKILL.md) updates an existing
+  installation within its current paradigm while preserving project-owned
+  behavior, selected models, learned data, and runtime state.
+
+The files under `.github/skills/` are the canonical, versioned sources. They
+do not replace the detailed prompts; each skill classifies the operation,
+loads the appropriate prompt, and adds a mandatory effective-contract
+baseline and equivalence gate.
+
+The rationale and detailed findings behind this preservation protocol are
+documented in [ANALISI_PERDITE_PERSONAS_AGENTI.md](ANALISI_PERDITE_PERSONAS_AGENTI.md).
+
+When the harness discovers project skills, invoke them while the ACE kit is
+the active workspace and provide the target repository path. To make requests
+such as “install ACE here” or “update ACE” discoverable while working directly
+inside another repository, publish or copy these two skill directories to the
+harness's supported user-level skill directory. Preserve the directory names
+and refresh the user copies from this repository when the kit changes. The
+repository copies remain the source of truth; do not install operator skills
+into each target as part of the ACE runtime. A user-level copy resolves
+`KIT_ROOT` independently from its own location: supply or configure the local
+ACE kit path when it cannot be uniquely discovered. It must never use its own
+directory or the target's installed runtime as the kit source.
+
+### Install the operator skills from chat
+
+Open the ACE kit as the active workspace and ask the chat agent:
+
+```text
+Install the ACE operator skills from <KIT_ROOT>/.github/skills/install-ace
+and <KIT_ROOT>/.github/skills/update-ace into the user-level skill directory
+supported by this harness. Keep the repository copies as the source of truth,
+do not modify their contents, do not install ACE into this repository, and
+verify that both user-level skills are discoverable.
+```
+
+Replace `<KIT_ROOT>` with the absolute path of this repository. The agent must
+resolve the harness-supported user skill location rather than inventing one.
+If the harness loads user skills only when a chat starts, open a new chat after
+the copy. Repeat the same request after updating the kit to refresh the
+user-level copies.
+
+### Start an installation from chat
+
+Open the destination repository as the active workspace, start a chat in which
+the user-level skills are available, and provide both the kit and destination
+paths:
+
+```text
+Install ACE in this repository using the install-ace skill.
+KIT_ROOT is <KIT_ROOT>.
+TARGET_ROOT is <TARGET_ROOT>.
+Use embedded integration.
+```
+
+Use `Use mediated integration` instead for strict opt-in mediation. Omit the
+last sentence when the skill should explain the two modes and ask which one to
+use. The skill must classify the operation as a clean installation, load the
+matching canonical installation prompt from `KIT_ROOT`, preserve the target's
+effective agent contracts, run the required checks, and report the
+preservation matrix. If ACE is already present, it must route to update rather
+than treating the repository as a clean target.
+
+### Start an update from chat
+
+Open the installed project as the active workspace and ask:
+
+```text
+Update the existing ACE installation in this repository using the update-ace
+skill.
+KIT_ROOT is <KIT_ROOT>.
+TARGET_ROOT is <TARGET_ROOT>.
+Preserve the installed integration paradigm, project-owned agent behavior,
+selected models, configuration, learned data, and runtime state.
+```
+
+The skill must use [UPDATE_PROMPT.md](UPDATE_PROMPT.md) and the update
+inspector from `KIT_ROOT`, never the possibly stale installed copy under
+`TARGET_ROOT`. A request to change between embedded and mediated is a migration,
+not an update, and requires a separately reviewed plan and explicit approval.
+
+Agent harness, model provider, and selected model are independent contract
+dimensions. Converting agent files to one harness may change paths,
+frontmatter fields, tool nomenclature, and delegate syntax, but must preserve
+the selected model and effective capabilities whenever that harness supports
+them. Any necessary substitution requires evidence and explicit approval.
+
 In mediated mode, opt-in is a hard boundary. Installation must not turn ACE on
 globally, reroute the standard orchestrator, or modify workers. The existing
 runtime name keeps normal behavior; only the same name suffixed with `-ace`
@@ -112,6 +206,9 @@ orchestrator persona remains ACE-free and is shared by both its standard and
 INSTALL_PROMPT_EMBEDDED.md   # installer for direct agent integration
 INSTALL_PROMPT_MEDIATED.md   # installer for strict opt-in mediation
 UPDATE_PROMPT.md             # updater for an existing installation
+.github/skills/
+├── install-ace/SKILL.md      # clean-install routing and preservation gate
+└── update-ace/SKILL.md       # conservative update and equivalence gate
 ace/
 ├── README_EMBEDDED.md       # full embedded runtime reference (English)
 ├── README_EMBEDDED_IT.md    # full embedded runtime reference (Italian)
