@@ -126,15 +126,16 @@ Install ACE in this repository using the install-ace skill.
 KIT_ROOT is <KIT_ROOT>.
 TARGET_ROOT is <TARGET_ROOT>.
 Use embedded integration.
+Use the personas paradigm for the agent team.
 ```
 
-Use `Use mediated integration` instead for strict opt-in mediation. Omit the
-last sentence when the skill should explain the two modes and ask which one to
-use. The skill must classify the operation as a clean installation, load the
-matching canonical installation prompt from `KIT_ROOT`, preserve the target's
-effective agent contracts, run the required checks, and report the
-preservation matrix. If ACE is already present, it must route to update rather
-than treating the repository as a clean target.
+Omit the persona line when the default agent representation is preferred. Use
+`Use mediated integration` instead of `Use embedded integration` for strict
+opt-in mediation. The skill must classify the operation as a clean
+installation, load the matching canonical installation prompt from `KIT_ROOT`,
+preserve the target's effective agent contracts, run the required checks, and
+report the preservation matrix. If ACE is already present, it must route to
+update rather than treating the repository as a clean target.
 
 ### Start an update from chat
 
@@ -153,6 +154,8 @@ The skill must use [UPDATE_PROMPT.md](UPDATE_PROMPT.md) and the update
 inspector from `KIT_ROOT`, never the possibly stale installed copy under
 `TARGET_ROOT`. A request to change between embedded and mediated is a migration,
 not an update, and requires a separately reviewed plan and explicit approval.
+Add `Use the personas paradigm for the agent team.` when the update should
+preserve or adopt that representation.
 
 Agent harness, model provider, and selected model are independent contract
 dimensions. Converting agent files to one harness may change paths,
