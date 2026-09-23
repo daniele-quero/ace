@@ -223,4 +223,3 @@ Prima di modificare gli agenti:
 6. classificare ogni delta come `ACE-additive`, `representation-only`,
    `platform-required`, `user-approved` o `unexplained-loss`;
 7. bloccare il successo se esiste una perdita non spiegata.
-
