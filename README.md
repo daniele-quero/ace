@@ -82,6 +82,9 @@ do not replace the detailed prompts; each skill classifies the operation,
 loads the appropriate prompt, and adds a mandatory effective-contract
 baseline and equivalence gate.
 
+The rationale and detailed findings behind this preservation protocol are
+documented in [ANALISI_PERDITE_PERSONAS_AGENTI.md](ANALISI_PERDITE_PERSONAS_AGENTI.md).
+
 When the harness discovers project skills, invoke them while the ACE kit is
 the active workspace and provide the target repository path. To make requests
 such as “install ACE here” or “update ACE” discoverable while working directly
