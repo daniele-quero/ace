@@ -366,10 +366,17 @@ unrelated instructions. Embedded may retain its existing selected-agent
 activation; mediated must remain concise and explicitly opt-in, with no
 retrieval markers or always-on ACE duties on ordinary routes.
 
-Merge runtime-data ignore rules without replacing project rules. Preserve
-`.gitkeep` exceptions and verify ignored data remains ignored while canonical
-configuration, templates, wrappers, personas, documentation, and empty
-playbook skeletons remain trackable as intended.
+Reconcile ACE rules in `.gitignore` without replacing unrelated project rules.
+Do not ignore runtime JSON in traces, proposals, applied batches, decisions, or
+state; remove ACE rules that ignore those files or directories, and add narrow
+exceptions if another rule (such as a blanket `*.json`) would hide them.
+Preserve the `project.json` exclusion, transient lock-file exclusions, and
+`.gitkeep` exceptions. Verify representative runtime JSON paths are not
+ignored and existing untracked runtime records appear in `git status`.
+Runtime records must remain available for normal Git versioning; do not stage
+or commit them automatically. Canonical configuration, templates, wrappers,
+personas, documentation, and empty playbook skeletons must remain trackable as
+intended.
 
 ## Phase 7 — preserve runtime and learned state
 
@@ -453,6 +460,7 @@ Validate specifically that:
   a real dedicated question tool;
 - sign-off remains explicit and only the approved apply path writes playbooks;
 - playbooks, traces, proposals, decisions, counters, and state are preserved;
+- runtime JSON is not ignored and remains available for version control;
 - no kit project data, fixtures, unresolved conflict markers, or accidental
   secrets were copied.
 

@@ -2,6 +2,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const {
@@ -33,6 +34,15 @@ const REQUIRED_MEDIATED_FILES = [
   'ace/scripts/lib/runtime.js',
   'ace/templates/mediated-adapter.md',
   'ace/templates/mediated-ace-wrapper.md',
+];
+const RUNTIME_JSON_PROBES = [
+  'ace/traces/__ace_runtime_probe__.json',
+  'ace/traces/processed/__ace_runtime_probe__.json',
+  'ace/proposals/__ace_runtime_probe__.json',
+  'ace/proposals/applied/__ace_runtime_probe__.json',
+  'ace/state/__ace_runtime_probe__.json',
+  'ace/state/applications/__ace_runtime_probe__.json',
+  'ace/state/runtime/__ace_runtime_probe__.json',
 ];
 
 function fail(errors, message) {
@@ -82,6 +92,26 @@ function findPlaceholders(root, relativePaths) {
     if (/__[A-Z0-9_]+__/.test(content)) matches.push(relativePath);
   }
   return matches;
+}
+
+function validateRuntimeDataTracking(errors) {
+  for (const relativePath of RUNTIME_JSON_PROBES) {
+    const result = spawnSync(
+      'git',
+      ['check-ignore', '--no-index', '--quiet', '--', relativePath],
+      { cwd: REPO_ROOT, encoding: 'utf8' },
+    );
+    if (result.error) {
+      fail(errors, `Cannot check Git ignore rules for ${relativePath}: ${result.error.message}`);
+    } else if (result.status === 0) {
+      fail(errors, `Runtime JSON must remain trackable by Git: ${relativePath}`);
+    } else if (result.status !== 1) {
+      fail(
+        errors,
+        `Git ignore check failed for ${relativePath}: ${result.stderr.trim() || `exit ${result.status}`}`,
+      );
+    }
+  }
 }
 
 function run() {
@@ -186,13 +216,7 @@ function run() {
   if (placeholders.length) {
     fail(errors, `Unresolved placeholders in: ${placeholders.join(', ')}`);
   }
-  if (config && (config.integration_mode || 'embedded') === 'mediated') {
-    const ignorePath = path.join(REPO_ROOT, '.gitignore');
-    const ignore = fs.existsSync(ignorePath) ? fs.readFileSync(ignorePath, 'utf8') : '';
-    if (!/^ace\/state\/(?:runtime\/)?\s*$/m.test(ignore)) {
-      fail(errors, 'Runtime state must be ignored with ace/state/runtime/ or ace/state/.');
-    }
-  }
+  validateRuntimeDataTracking(errors);
 
   if (errors.length) {
     console.error(`ACE installation validation failed (${errors.length}):`);

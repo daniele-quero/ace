@@ -94,6 +94,10 @@ Apply these invariants:
    produce it.
 8. Keep guardrails required before persona loading in the wrapper. Do not rely
    on future ACE lessons to restore behavior removed during installation.
+9. Preserve project-owned ACE runtime JSON as versionable project data.
+   Installing a clean kit must not copy runtime data from the kit source
+   project, but traces, proposals, decisions, counters, and state created in
+   the destination must not be ignored or excluded from version control.
 
 ### Example
 
@@ -150,6 +154,9 @@ additions.
    `user-approved`, or `unexplained-loss`.
 7. Do not claim success while any `unexplained-loss`, unresolved conflict,
    failed check, or unanswered decision remains.
+8. Verify that ACE runtime JSON paths are not ignored by the destination's
+   `.gitignore`. Report any newly visible untracked runtime data for normal
+   review; do not stage or commit it automatically.
 
 The final report must include both the prompt's file/command report and the
 behavioral preservation matrix with all intentional differences.
