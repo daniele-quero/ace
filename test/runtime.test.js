@@ -33,6 +33,11 @@ function failingCommand(root, script, ...args) {
   return result;
 }
 
+function initGit(root) {
+  const result = spawnSync('git', ['init', '--quiet'], { cwd: root, encoding: 'utf8' });
+  assert.equal(result.status, 0, `git init failed\n${result.stderr}`);
+}
+
 function inspectTarget(root) {
   const result = spawnSync(
     process.execPath,
@@ -160,6 +165,7 @@ function writeProcessedTrace(root, taskId, agent = 'worker') {
 test('generates and validates Copilot and Claude assets', (t) => {
   const { root } = setupProject();
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  initGit(root);
 
   command(root, 'generate_ace_agents.js');
   command(root, 'retrieval.js');
@@ -179,6 +185,19 @@ test('generates and validates Copilot and Claude assets', (t) => {
   ]) {
     assert.equal(fs.existsSync(path.join(root, relative)), true, relative);
   }
+});
+
+test('installation validation requires runtime JSON to remain trackable', (t) => {
+  const { root } = setupProject();
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  initGit(root);
+  command(root, 'generate_ace_agents.js');
+  command(root, 'retrieval.js');
+  command(root, 'validate_install.js');
+
+  fs.appendFileSync(path.join(root, '.gitignore'), '\nace/state/\n');
+  const result = failingCommand(root, 'validate_install.js');
+  assert.match(result.stderr, /Runtime JSON must remain trackable by Git/);
 });
 
 test('generated lifecycle names match the orchestrator contract', () => {
@@ -224,7 +243,7 @@ test('legacy config without integration metadata remains embedded-compatible', (
   ]) {
     fs.rmSync(path.join(root, relative));
   }
-  fs.writeFileSync(path.join(root, '.gitignore'), 'ace/traces/*.json\n');
+  initGit(root);
 
   command(root, 'generate_ace_agents.js');
   command(root, 'retrieval.js');
@@ -240,6 +259,7 @@ test('generates assets only for the enabled platform', async (t) => {
         claude: enabled === 'claude',
       });
       inner.after(() => fs.rmSync(root, { recursive: true, force: true }));
+      initGit(root);
 
       command(root, 'generate_ace_agents.js');
       command(root, 'retrieval.js');
@@ -260,6 +280,7 @@ test('generates assets only for the enabled platform', async (t) => {
 test('generates configured family instructions even when the family is empty', (t) => {
   const { root } = setupProject({ agentFamilies: { worker: ['backend'] } });
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  initGit(root);
 
   command(root, 'generate_ace_agents.js');
   command(root, 'retrieval.js');
@@ -458,6 +479,7 @@ test('does not acknowledge traces when a counter target is unresolved', (t) => {
 test('mediated retrieval isolates global instructions and validates both platforms', (t) => {
   const { root } = setupProject({ integrationMode: 'mediated' });
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  initGit(root);
 
   for (const globalFile of ['.github/copilot-instructions.md', 'CLAUDE.md']) {
     const target = path.join(root, globalFile);
@@ -467,7 +489,6 @@ test('mediated retrieval isolates global instructions and validates both platfor
 
   command(root, 'generate_ace_agents.js');
   command(root, 'retrieval.js');
-  fs.writeFileSync(path.join(root, '.gitignore'), 'ace/state/\n');
   command(root, 'validate_install.js');
 
   for (const globalFile of ['.github/copilot-instructions.md', 'CLAUDE.md']) {
@@ -676,6 +697,7 @@ test('mediated helpers prepare, constrain, capture, and finalize a task', (t) =>
 test('mediated config rejects incomplete canonical runtime mappings', (t) => {
   const { root } = setupProject({ claude: false, integrationMode: 'mediated' });
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  initGit(root);
   const configPath = path.join(root, 'ace', 'config', 'project.json');
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   delete config.platforms.copilot.canonical_to_runtime.worker;
@@ -687,6 +709,7 @@ test('mediated config rejects incomplete canonical runtime mappings', (t) => {
 test('installation validation rejects any missing manifest-declared runtime file', (t) => {
   const { root } = setupProject({ claude: false });
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  initGit(root);
   fs.rmSync(path.join(root, 'ace', 'templates', 'persona-wrapper-body.md'));
 
   const result = failingCommand(root, 'validate_install.js');
@@ -925,6 +948,8 @@ test('update prompt defines the complete safe update contract', () => {
     'pre/post behavioral preservation matrix',
     'Unexplained behavioral loss blocks',
     'Do not claim success while a required check fails',
+    'runtime JSON',
+    'not ignored',
   ]) {
     assert.match(
       prompt,
@@ -952,6 +977,8 @@ test('embedded installation prompt covers required interactive branches', () => 
     'validate_install.js',
     'ownership.kit_owned',
     'Do not install a hand-picked subset',
+    'runtime JSON',
+    'not ignored',
   ]) {
     assert.match(prompt, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
@@ -975,6 +1002,8 @@ test('mediated installer covers the runtime contract', () => {
     'preservation matrix',
     'Unexplained behavioral loss blocks',
     'Do not install a hand-picked subset',
+    'runtime JSON',
+    'not ignored',
   ]) {
     assert.match(prompt, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
@@ -992,6 +1021,8 @@ test('operator skills route operations and preserve effective contracts', () => 
         'Keep harness and model independent',
         'Build a preservation matrix',
         'unexplained-loss',
+        'runtime JSON',
+        'not be ignored',
       ],
     },
     {
@@ -1005,6 +1036,8 @@ test('operator skills route operations and preserve effective contracts', () => 
         'Run this exact command as soon as the roots have been verified',
         'runtime and learned state byte-for-byte',
         'behavioral loss is unexplained',
+        'trackable by Git',
+        'not ignored',
       ],
     },
   ];

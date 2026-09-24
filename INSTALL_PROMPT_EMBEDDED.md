@@ -239,8 +239,10 @@ lifecycle agents themselves use source personas.
 4. Copy the empty `KIT_ROOT/playbooks/` skeleton to
    `TARGET_ROOT/playbooks/`.
 5. Do not copy traces, proposals, decisions, learned bullets, counters, or
-   state from any other project. The kit directories must be empty except for
-   documentation, `.gitkeep`, and the initial empty state file.
+   state from the kit's source project. The kit directories must be empty
+   except for documentation, `.gitkeep`, and the initial empty state file.
+   Destination-owned runtime JSON created by ACE is project data: preserve it
+   and keep it available for normal Git versioning.
 6. Copy `ace/config/project.template.json` to
    `ace/config/project.json` and materialize:
    - `team_name`;
@@ -263,10 +265,15 @@ lifecycle agents themselves use source personas.
 10. Keep canonical ids filesystem-safe and unique. If a discovered runtime name
    is namespaced, use the stable local id rather than slashes as the scope
    filename.
-11. Merge the ACE runtime-data rules from `KIT_ROOT/.gitignore` into the
-   destination `.gitignore` without replacing existing rules. Preserve the
-   `.gitkeep` exceptions and verify with `git status` that `project.json`,
-   traces, proposals, applied batches, and state JSON are ignored.
+11. Reconcile ACE rules in the destination `.gitignore` without replacing
+   unrelated project rules. Do not ignore runtime JSON in traces, proposals,
+   applied batches, decisions, or state; remove ACE rules that ignore those
+   files or directories, and add narrow exceptions if another rule (such as a
+   blanket `*.json`) would hide them. Preserve the `project.json` exclusion,
+   transient lock-file exclusions, and `.gitkeep` exceptions. Verify that
+   representative runtime JSON paths are not ignored and that existing
+   untracked runtime records appear in `git status`. Do not stage or commit
+   automatically.
 
 ## Phase 7 - Generate ACE agents and wire delegation
 
@@ -348,6 +355,8 @@ Verify all of the following:
 - warden has a dedicated question tool;
 - global and scoped retrieval markers are current;
 - no learned data or references from the kit's source project were copied;
+- destination runtime JSON is not ignored and remains available for version
+  control;
 - no pre-existing destination behavior or dirty-worktree change was lost;
 - `git diff` contains only the approved installation.
 

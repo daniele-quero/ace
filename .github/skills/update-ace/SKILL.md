@@ -91,6 +91,9 @@ kit-owned, project-owned, managed ACE merge, or runtime data.
    existing operational rule.
 8. Preserve runtime and learned state byte-for-byte unless the prompt
    authorizes a documented compatible data migration.
+9. Keep project-owned runtime JSON (including traces, proposals, decisions,
+   counters, and state) trackable by Git. Do not add or retain ACE ignore
+   rules that hide these records.
 
 ### Example
 
@@ -126,6 +129,8 @@ element is blocking.
    tools, delegates, handoffs, project behavior, and runtime state remain
    unchanged except for documented framework-required or explicitly approved
    deltas.
+   Confirm ACE runtime JSON is not ignored and report newly visible untracked
+   records for normal review; do not stage or commit them automatically.
 5. Do not claim success while a required check fails, a conflict remains, a
    decision is unanswered, or any behavioral loss is unexplained.
 

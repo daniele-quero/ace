@@ -189,9 +189,15 @@ Reflector and curator require real read/write/search/shell/delegation
 capabilities. Warden requires read/shell and a dedicated question tool. Stop on
 a missing capability; never advertise a tool that does not exist.
 
-Merge runtime-data ignore rules into `.gitignore`, preserving `.gitkeep`
-exceptions. Verify runtime state is ignored. Do not ignore canonical personas,
-wrappers, config templates, documentation, or playbook skeletons.
+Reconcile ACE rules in `.gitignore` without replacing unrelated project rules.
+Do not ignore runtime JSON in traces, proposals, applied batches, decisions,
+or state; remove ACE rules that ignore those files or directories, and add
+narrow exceptions if another rule (such as a blanket `*.json`) would hide
+them. Preserve the `project.json` exclusion, transient lock-file exclusions,
+and `.gitkeep` exceptions. Verify representative runtime JSON paths are not
+ignored and existing untracked runtime records appear in `git status`. Do not
+stage or commit automatically. Do not ignore canonical personas, wrappers,
+config templates, documentation, or playbook skeletons.
 
 ## Phase 6 — lifecycle wiring
 
@@ -277,6 +283,8 @@ Prove all of the following from files, generated output, and diffs:
 - trace ownership, counters, thresholds, and lifecycle delegation are wired;
 - only warden can apply after dedicated-tool human sign-off;
 - no global always-on behavior was introduced;
+- destination runtime JSON is not ignored and remains available for version
+  control;
 - no unresolved placeholders or copied learned/runtime data exist;
 - selected and only selected scopes have empty playbooks;
 - pre-existing dirty-worktree changes remain intact.
