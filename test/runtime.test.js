@@ -187,6 +187,40 @@ test('generates and validates Copilot and Claude assets', (t) => {
   }
 });
 
+test('warden retains two human checkpoints when delegation hides the question tool', (t) => {
+  const { root } = setupProject();
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const persona = fs.readFileSync(path.join(root, 'ace', 'prompts', 'warden.md'), 'utf8');
+
+  assert.match(persona, /Preferisci il tool domanda/);
+  assert.match(persona, /Se non puoi invocarlo, non simulare la chiamata/);
+  assert.match(persona, /curator[\s\S]*?reflector[\s\S]*?orchestratore[\s\S]*?proprio tool domanda[\s\S]*?chat principale/);
+  assert.match(persona, /nuovo turno dell'utente/);
+  assert.match(persona, /domanda posta all'umano,[\s\S]*?risposta\/opzione testuale[\s\S]*?batch\/file decisioni,[\s\S]*?step e gli hash/);
+  assert.match(persona, /semplice dichiarazione[\s\S]*?"l'utente ha confermato"[\s\S]*?non basta/);
+  assert.match(persona, /Non riutilizzare una risposta per un altro batch o per lo STOP seguente/);
+  assert.match(persona, /nuova sessione per il sign-off[\s\S]*?gate senza sign-off[\s\S]*?nuovo report e la tua revisione coincidono/);
+  assert.match(persona, /dopo la firma in una nuova delega,[\s\S]*?non rilanciare il[\s\S]*?gate senza sign-off[\s\S]*?seconda[\s\S]*?risposta umana/);
+  assert.match(persona, /STOP[\s\S]*?gate\.js <decisions-file> --sign-off[\s\S]*?STOP[\s\S]*?apply_delta\.js <gate-report-file>/);
+  assert.match(persona, /rilancia prima il gate senza sign-off[\s\S]*?hash delle decisioni, delle proposte[\s\S]*?ripeti revisione e STOP/);
+  assert.match(persona, /hash del report firmato non coincidono[\s\S]*?non applicare/);
+  assert.match(persona, /conferma anticipata per[\s\S]*?apply_delta\.js/);
+
+  command(root, 'generate_ace_agents.js');
+  for (const [relative, questionTool] of [
+    ['.github/agents/ACE-warden.agent.md', 'ask_user'],
+    ['.claude/agents/Ace-warden.md', 'AskUserQuestion'],
+  ]) {
+    const wrapper = fs.readFileSync(path.join(root, relative), 'utf8');
+    assert.match(wrapper, new RegExp(`tools: .*"${questionTool}"`));
+    assert.match(wrapper, /question tool is unavailable in this delegated session/);
+    assert.match(wrapper, /orchestrator-mediated or asynchronous human confirmation/);
+    assert.match(wrapper, /never simulate consent/);
+    assert.doesNotMatch(wrapper, /stop rather than simulating consent/);
+  }
+  assert.doesNotMatch(persona, /orchestratore esegue.*(?:sign-off|apply_delta)/i);
+});
+
 test('installation validation requires runtime JSON to remain trackable', (t) => {
   const { root } = setupProject();
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));

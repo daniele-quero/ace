@@ -138,9 +138,13 @@ regole deprecate, in quarantena o live-excluded non vengono servite.
 ## Controllo umano e sicurezza
 
 La validazione meccanica precede la revisione semantica. Un gate superato non
-autorizza una scrittura. Il warden usa il question tool dedicato dell'host,
-chiede una sola approvazione alla volta e passa un sign-off verificabile ad
-`apply_delta.js`. Le istruzioni di progetto e sicurezza a priorità superiore
+autorizza una scrittura. Il warden chiede separatamente conferma per sign-off
+e apply, preferendo il question tool dedicato dell'host. Se il warden delegato
+non puo' invocarlo, l'orchestratore inoltra ogni domanda esatta e la risposta
+effettiva dell'utente raccolta col proprio tool; se manca anche questo, attende
+un nuovo turno dell'utente nella chat principale prima di inoltrarla al
+warden. Senza risposta nessuna firma o applicazione. Solo il warden esegue
+i comandi. Le istruzioni di progetto e sicurezza a priorità superiore
 prevalgono sempre.
 
 Anche l'opt-in è rigoroso: installare ACE non autorizza modifiche al percorso

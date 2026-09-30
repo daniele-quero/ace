@@ -242,8 +242,11 @@ package.json                 # npm test entry point
 - Runtime identities, team labels, paths, platforms, and tools come from the
   host's materialized `ace/config/project.json`.
 - Reflector and curator propose and decide; they never directly edit playbooks.
-- Warden requires deterministic validation and explicit, one-at-a-time human
-  confirmation through the host's dedicated question tool.
+- Warden requires deterministic validation and two separate explicit human
+  confirmations. Prefer the host's question tool; when it is unavailable to
+  the delegated warden, the orchestrator relays each question and actual
+  user response (via its question tool or an asynchronous new user turn).
+  Only the warden executes sign-off and apply; unanswered checkpoints block.
 - `apply_delta.js` is the sole durable playbook mutation path after sign-off.
 - Higher-priority project and safety instructions always win.
 - Installers preserve dirty-worktree changes and do not copy runtime evidence

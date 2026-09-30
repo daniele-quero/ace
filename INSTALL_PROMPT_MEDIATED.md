@@ -23,8 +23,9 @@ Preserve destination behavior. Never modify the kit while installing.
    → trace → counters → threshold → reflector → curator → warden → sign-off →
    apply → regenerate lifecycle.
 6. No role writes a playbook directly. Only the signed-off apply path may do
-   so. Human approval must use a dedicated question tool, one question at a
-   time.
+   so. Human approval for each warden STOP prefers a dedicated question tool;
+   if delegation hides it, the orchestrator relays the explicit response
+   from its own tool or a new user turn in the main chat. No response blocks.
 
 ## Interaction and safety
 
@@ -186,8 +187,11 @@ Both `orchestrator_entrypoints.project` and `orchestrator_entrypoints.ace` are
 required metadata and must remain distinct.
 
 Reflector and curator require real read/write/search/shell/delegation
-capabilities. Warden requires read/shell and a dedicated question tool. Stop on
-a missing capability; never advertise a tool that does not exist.
+capabilities. Warden requires read/shell and a real platform question tool
+declared in its wrapper. Delegation may not propagate the question tool:
+verify the orchestrator can relay each explicit human response using its
+own tool or a new user turn in the main chat. Stop if no human response
+channel exists; never advertise a tool that does not exist on the platform.
 
 Reconcile ACE rules in `.gitignore` without replacing unrelated project rules.
 Do not ignore runtime JSON in traces, proposals, applied batches, decisions,
@@ -207,7 +211,9 @@ platform:
 - ACE orchestrator wrapper → reflector;
 - reflector → curator;
 - curator → warden;
-- warden has the dedicated question capability;
+- the warden wrapper declares a real platform question tool, and the
+  orchestrator can relay each separate approval if that tool is not
+  propagated to the delegated warden;
 - only the ACE wrapper has lifecycle delegation;
 - standard orchestrator and all workers remain unchanged.
 
@@ -281,7 +287,8 @@ Prove all of the following from files, generated output, and diffs:
 - every delegation preparation supplies the selected platform explicitly;
 - scoped retrieval reaches the wrapper without permanent worker injection;
 - trace ownership, counters, thresholds, and lifecycle delegation are wired;
-- only warden can apply after dedicated-tool human sign-off;
+- only warden can sign off and apply after separate explicit human approvals
+  via the warden's tool or orchestrator-mediated question and response;
 - no global always-on behavior was introduced;
 - destination runtime JSON is not ignored and remains available for version
   control;

@@ -456,8 +456,10 @@ Validate specifically that:
   was silently weakened or dropped;
 - embedded participation is unchanged, or mediated standard/ACE routes remain
   distinct and workers remain unchanged;
-- reflector delegates to curator, curator delegates to warden, and warden has
-  a real dedicated question tool;
+- reflector delegates to curator, curator delegates to warden, and the
+  warden wrapper declares a real platform question tool; if delegation
+  does not propagate it, the orchestrator must relay each explicit human
+  response via its own tool or a new user turn in the main chat;
 - sign-off remains explicit and only the approved apply path writes playbooks;
 - playbooks, traces, proposals, decisions, counters, and state are preserved;
 - runtime JSON is not ignored and remains available for version control;

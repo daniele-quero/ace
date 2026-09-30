@@ -187,9 +187,13 @@ metadata. Quarantined, deprecated, and live-excluded rules are not served.
 ## Human control and safety
 
 Mechanical validation precedes semantic review. A passing gate does not imply
-permission to write. The warden must use the host's dedicated question tool,
-ask one approval question at a time, and pass verifiable sign-off to
-`apply_delta.js`. Higher-priority project and safety instructions always win.
+permission to write. The warden asks separately for sign-off and apply,
+preferring the host's dedicated question tool. When the delegated warden
+cannot invoke it, the orchestrator relays each exact question and actual
+human response from its own question tool; if that is unavailable too, it
+waits for a new user turn in the main chat before returning the response
+to the warden. No reply means no sign-off or apply. Only the warden runs
+those commands. Higher-priority project and safety instructions always win.
 
 Mediated opt-in is equally strict: installing ACE does not authorize changing
 the default orchestrator route, worker definitions, or global behavior. A task

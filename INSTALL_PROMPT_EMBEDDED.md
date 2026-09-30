@@ -352,7 +352,10 @@ Verify all of the following:
   supported by the target harness;
 - orchestrator delegation reaches reflector, reflector reaches curator, and
   curator reaches warden;
-- warden has a dedicated question tool;
+- the warden wrapper declares a real platform question tool; if delegation
+  does not propagate it, verify that the orchestrator can relay the warden's
+  separate sign-off and apply questions and the user's explicit responses
+  (using its own tool, or new user turns in the main chat);
 - global and scoped retrieval markers are current;
 - no learned data or references from the kit's source project were copied;
 - destination runtime JSON is not ignored and remains available for version
