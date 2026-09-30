@@ -193,6 +193,14 @@ This matters because the system is learning from real execution data, not manufa
 
 The human sign-off is therefore not optional decoration. It is the mechanism that turns a proposed change into a real runtime decision. Without that explicit confirmation, `apply_delta.js` refuses to write, and `retrieval.js` will not regenerate the operational `instructions` from the new state.
 
+The warden requests two separate approvals, one before signing the gate and
+another before applying the delta. It prefers a dedicated question tool.
+If the delegated warden cannot access one, the orchestrator asks the exact
+question with its own tool or waits for an explicit answer in a new user
+turn in the main chat, then relays the question and response to the warden.
+No response or generic consent authorizes either command; only the warden
+runs them.
+
 In other words, the human is the final reviewer of the system's memory. The system can propose and validate; only the human decides whether the new rule belongs in the durable operating context.
 
 ## `playbook` and `instructions`: different content, different purpose

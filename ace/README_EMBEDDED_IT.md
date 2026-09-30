@@ -193,6 +193,13 @@ Questo è importante perché il sistema impara dai dati di esecuzione reali, non
 
 Il sign-off umano non è quindi un ornamento facoltativo. È il meccanismo che trasforma una proposta in una decisione reale del runtime. Senza quella conferma esplicita, `apply_delta.js` rifiuta di scrivere e `retrieval.js` non rigenera le `instructions` operative dallo stato nuovo.
 
+Il warden chiede due approvazioni distinte, prima della firma del gate e prima
+dell'applicazione del delta. Preferisce il tool domanda dedicato. Se il warden
+delegato non puo' invocarlo, l'orchestratore pone la domanda esatta tramite il
+proprio tool o attende una risposta esplicita in un nuovo turno della chat
+principale, poi inoltra domanda e risposta al warden. Nessuna risposta o un
+assenso generico autorizza i comandi; soltanto il warden li esegue.
+
 In altre parole, l'umano è il revisore finale della memoria del sistema. Il sistema può proporre e validare; solo l'umano decide se la nuova regola appartiene al contesto operativo duraturo.
 
 ## `playbook` e `instructions`: contenuti diversi, scopi diversi

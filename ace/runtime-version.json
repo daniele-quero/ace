@@ -1,6 +1,6 @@
 {
   "manifest_version": 1,
-  "runtime_version": "1.0.0",
+  "runtime_version": "1.1.0",
   "manifest_path": "ace/runtime-version.json",
   "ownership": {
     "kit_owned": {
@@ -8,7 +8,7 @@
       "ace/config/thresholds.json": "2c7bfdf524917d27676622758596447fa891f000cf751db2de4b56864e3ab1b0",
       "ace/prompts/curator.md": "a81a6804b76d3a4af19a862abb3b16f3bedf08cfc05cf25c52297579c1c14027",
       "ace/prompts/reflector.md": "3f6e585e96aa76a64bf5acd85f147a1c8f2cabebf4fc2c2986335e9209ae8d12",
-      "ace/prompts/warden.md": "c28f72d50c68ea9dcd6ce50108ffc73c2597af307c7ad83f407ce710edecb647",
+      "ace/prompts/warden.md": "937e80e164c361ad8ee278b2a9bea44b9bea3bd6b48a60cb52f0f3e82b9dfadf",
       "ace/schema/bullet.schema.json": "d7017c6e378eba40027d613d375132dd265cddbb7d2ccfc27797853c84730da8",
       "ace/schema/trace.schema.json": "67955f454381de324ebd15882e3619ac42f8d19216dd4bb0e66720052a264b79",
       "ace/scripts/apply_delta.js": "aeaa9ff970d69c67dd5f1741c2a4f29439077668e221b75b37137c8765bda654",
@@ -16,7 +16,7 @@
       "ace/scripts/check_threshold.js": "0cd3edddefc0053676415b64c6826be033906bdeaca7b2375460ebce1048c964",
       "ace/scripts/finalize_task.js": "ceecaf24eaa423a923d7c615ee4ec3f9e0808ce8dbc47c37caa4bbcb279fc635",
       "ace/scripts/gate.js": "db558cdcec2a0d8d55fafefa112825ed8dce1e69840fdd3ace4fc2ffb7066e9e",
-      "ace/scripts/generate_ace_agents.js": "929d05da6e63d187727753d27c995671f06ef2ceaa0e17f45f8f11cba5b6e8dc",
+      "ace/scripts/generate_ace_agents.js": "167919d72140a221c2c64a43185cf4a84ec620020e7ffc546f3f65d63a4d91b5",
       "ace/scripts/inspect_update.js": "4f0bce58aef610a40a7f3124270f687dcf9df4ba6e4cd535b2180f9cb1973b8b",
       "ace/scripts/lib/playbook.js": "42dcc8395d412fdc058b281eb0bfcd122edbfc30b0753635daa9e5574a5399ba",
       "ace/scripts/lib/runtime.js": "a3fe93115727949624bc26c8a461f7e668845033a6529b927bc44d885faf2cdc",
@@ -34,12 +34,12 @@
     },
     "mode_specific": {
       "embedded": {
-        "ace/README_EMBEDDED.md": "5ccbe5a944635a95cafcde42cd98a98ce6fb8131437f30dddf91ef845a66ada1",
-        "ace/README_EMBEDDED_IT.md": "7cb993e69fa800ec7d65d4526d9d7507fc32b567f457ecb50e2d7a35c593de94"
+        "ace/README_EMBEDDED.md": "408622293a1ba26184258ee16deb9f32f97539107060600c2337960aa737113a",
+        "ace/README_EMBEDDED_IT.md": "5b0721e5277d6e1b0d1b020ea1daf49dc2b45c8fa3fbbceabf8298356b6ba75c"
       },
       "mediated": {
-        "ace/README_MEDIATED.md": "39cab949617b534b125dbf0ab3576518c684fbb34aeef16e885d12e5b5eb6b4f",
-        "ace/README_MEDIATED_IT.md": "958bbcff173f65a44d6889a8e78ee0cf2c539110792daade7ebc5c4993e4d146"
+        "ace/README_MEDIATED.md": "515138c450a9ddda8d6d3cecbefaa6fb79eba76b1c9c9776229dff32490f9de3",
+        "ace/README_MEDIATED_IT.md": "864597779c9127db8699586ec3f7fb8f89d4fd0520827d66139ee8ce3f2b0a5d"
       }
     },
     "managed_merge": [

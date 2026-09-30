@@ -31,7 +31,7 @@ const ROLES = {
     delegates: [],
     guardrails: [
       'Never sign or apply a playbook change without the required explicit human confirmation.',
-      'If the interactive question tool is unavailable, stop rather than simulating consent.',
+      "If the question tool is unavailable in this delegated session, use the source persona's explicit orchestrator-mediated or asynchronous human confirmation; never simulate consent.",
     ],
     cycle: 'Read the source prompt, run the unsigned gate, present its result, request each confirmation, and verify every command output.',
   },
