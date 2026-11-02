@@ -46,7 +46,7 @@ const fs = require('fs');
 const path = require('path');
 const {
   REPO_ROOT, parsePlaybookFile, serializeFile, listPlaybookFiles, listArchiveFiles,
-  assertSafeWritePath, acquireMutationLock,
+  assertSafeWritePath, acquireMutationLock, atomicWrite,
 } = require('./lib/playbook');
 const retrieval = require('./retrieval');
 
@@ -55,14 +55,6 @@ function readJSON(p) {
 }
 
 const JOURNAL_PATH = path.join(REPO_ROOT, 'ace', 'state', 'counter-update.json');
-
-function atomicWrite(targetPath, content) {
-  assertSafeWritePath(targetPath);
-  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-  const temporary = `${targetPath}.${process.pid}.tmp`;
-  fs.writeFileSync(temporary, content);
-  fs.renameSync(temporary, targetPath);
-}
 
 function recoverPendingJournal(verbose) {
   if (!fs.existsSync(JOURNAL_PATH)) return false;

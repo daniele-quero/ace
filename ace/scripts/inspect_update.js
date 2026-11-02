@@ -4,6 +4,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const { runtimeSkillArtifacts, SKILL_NAME, SKILL_SOURCE } = require('./generate_ace_agents');
 
 const KIT_ROOT = path.resolve(__dirname, '..', '..');
 const MANIFEST_PATH = path.join(KIT_ROOT, 'ace', 'runtime-version.json');
@@ -319,6 +320,50 @@ function inspect(targetRoot) {
       kit_sha256: expectedHash,
       target_sha256: targetHash,
     });
+  }
+
+  if (configResult.value && !configResult.error) {
+    const artifacts = runtimeSkillArtifacts(configResult.value);
+    const targets = new Set(artifacts.map((artifact) => artifact.target));
+    const directories = new Set(artifacts.map((artifact) => (
+      `${artifact.target.split(`/${SKILL_NAME}/`)[0]}/${SKILL_NAME}`
+    )));
+    const inspectSkillFile = (relative, source, expectedHash) => {
+      let state;
+      let targetHash = null;
+      try {
+        const target = safePath(targetRoot, relative);
+        if (!fs.existsSync(target)) state = 'missing';
+        else if (!fs.statSync(target).isFile()) throw new Error('Expected a regular runtime skill file.');
+        else {
+          targetHash = hashFile(target);
+          if (expectedHash && targetHash === expectedHash) state = 'current';
+          else if (targetHash === installedHashes[source]) state = expectedHash ? 'update_available' : 'obsolete';
+          else throw new Error('Runtime skill differs from its owned versions or collides with an unowned same-name skill.');
+        }
+      } catch (error) {
+        state = 'conflict';
+        conflicts.push({ path: relative, reason: error.message });
+      }
+      kitOwned.push({
+        path: relative, source_path: source, state,
+        kit_sha256: expectedHash || null, target_sha256: targetHash,
+      });
+    };
+    for (const artifact of artifacts) {
+      inspectSkillFile(artifact.target, artifact.source, hashFile(safePath(KIT_ROOT, artifact.source)));
+    }
+    for (const directory of directories) {
+      try {
+        for (const file of listFiles(targetRoot, directory)) {
+          const relative = file.replace(/ \[symlink\]$/, '');
+          if (targets.has(relative)) continue;
+          inspectSkillFile(relative, `${SKILL_SOURCE}/${relative.slice(directory.length + 1)}`, null);
+        }
+      } catch (error) {
+        conflicts.push({ path: directory, reason: error.message });
+      }
+    }
   }
 
   const managedMerge = manifest.ownership.managed_merge.map((relative) => {

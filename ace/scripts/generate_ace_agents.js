@@ -3,6 +3,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const {
   REPO_ROOT, loadProjectConfig, enabledPlatforms, assertSafeWritePath,
 } = require('./lib/playbook');
@@ -36,6 +37,68 @@ const ROLES = {
     cycle: 'Read the source prompt, run the unsigned gate, present its result, request each confirmation, and verify every command output.',
   },
 };
+
+const SKILL_NAME = 'rectify-playbook';
+const SKILL_SOURCE = `ace/skills/${SKILL_NAME}`;
+const normalizedHash = (content) => crypto.createHash('sha256')
+  .update(content.replace(/\r\n/g, '\n')).digest('hex');
+
+function filesUnder(directory) {
+  assertSafeWritePath(directory);
+  if (!fs.existsSync(directory)) return [];
+  return fs.readdirSync(directory, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))
+    .flatMap((entry) => {
+      const file = assertSafeWritePath(path.join(directory, entry.name));
+      if (entry.isSymbolicLink()) throw new Error(`Runtime skill contains a symbolic link: ${file}`);
+      if (entry.isDirectory()) return filesUnder(file);
+      if (!entry.isFile()) throw new Error(`Runtime skill asset is not a regular file: ${file}`);
+      return [file];
+    });
+}
+
+function runtimeSkillArtifacts(config) {
+  const sourceFiles = filesUnder(path.join(REPO_ROOT, SKILL_SOURCE));
+  if (!sourceFiles.some((file) => path.basename(file) === 'SKILL.md')) {
+    throw new Error(`Missing canonical runtime skill: ${SKILL_SOURCE}/SKILL.md`);
+  }
+  return enabledPlatforms(config).flatMap((platform) => sourceFiles.map((file) => {
+    const source = path.relative(REPO_ROOT, file).replace(/\\/g, '/');
+    const relative = path.relative(path.join(REPO_ROOT, SKILL_SOURCE), file);
+    const target = path.join(platform.name === 'copilot' ? '.github' : '.claude', 'skills', SKILL_NAME, relative)
+      .replace(/\\/g, '/');
+    return { source, target, content: fs.readFileSync(file, 'utf8') };
+  }));
+}
+
+function planRuntimeSkills(config) {
+  const installedManifest = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'ace', 'runtime-version.json'), 'utf8'));
+  const previous = installedManifest.ownership?.kit_owned || {};
+  const artifacts = runtimeSkillArtifacts(config);
+  const edits = [];
+  for (const artifact of artifacts) {
+    const target = assertSafeWritePath(path.join(REPO_ROOT, artifact.target));
+    const current = readFileIfPresent(target);
+    if (current === artifact.content) continue;
+    if (current !== null && normalizedHash(current) !== normalizedHash(artifact.content)
+        && normalizedHash(current) !== previous[artifact.source]) {
+      throw new Error(`Runtime skill ownership/content conflict: ${artifact.target}. Resolve this exact file explicitly before generation.`);
+    }
+    edits.push({ target, content: artifact.content });
+  }
+  for (const platform of enabledPlatforms(config)) {
+    const directory = path.join(REPO_ROOT, platform.name === 'copilot' ? '.github' : '.claude', 'skills', SKILL_NAME);
+    for (const file of filesUnder(directory)) {
+      const relative = path.relative(REPO_ROOT, file).replace(/\\/g, '/');
+      if (artifacts.some((artifact) => artifact.target === relative)) continue;
+      const source = `${SKILL_SOURCE}/${path.relative(directory, file).replace(/\\/g, '/')}`;
+      if (normalizedHash(fs.readFileSync(file, 'utf8')) !== previous[source]) {
+        throw new Error(`Unowned or modified extra runtime skill asset: ${relative}. Preserve it until explicitly resolved.`);
+      }
+      edits.push({ target: file, content: null });
+    }
+  }
+  return edits;
+}
 
 function relLink(fromFile, toFile) {
   let relative = path.relative(path.dirname(fromFile), toFile).replace(/\\/g, '/');
@@ -87,6 +150,7 @@ function render(platformName, platform, role) {
     '- The source persona owns the workflow, output contract, and gates. Do not duplicate or replace them here.',
     '',
     '## Non-delegable guardrails',
+    '- Never invoke or delegate rectify-playbook or rectify_playbook.js during normal ACE learning, through another agent, by reclassifying current-cycle work, or as a fallback for gate failures, missing traces, weak evidence or unavailable tools. Report blockers and retain ordinary human checkpoints. Return a genuinely separate external request to the caller; obey the skill and harness manual-invocation restrictions.',
     ...definition.guardrails.map((item) => `- ${item}`),
     '',
     '## Minimum cycle',
@@ -100,6 +164,7 @@ function render(platformName, platform, role) {
 
 function run({ checkOnly = false } = {}) {
   const config = loadProjectConfig();
+  const skillEdits = planRuntimeSkills(config);
   const changes = [];
   const enabled = enabledPlatforms(config);
   const enabledNames = new Set(enabled.map((platform) => platform.name));
@@ -127,10 +192,19 @@ function run({ checkOnly = false } = {}) {
         fs.writeFileSync(target, content);
       }
     }
+    for (const edit of skillEdits) {
+      changes.push(path.relative(REPO_ROOT, edit.target).replace(/\\/g, '/'));
+      if (checkOnly) continue;
+      if (edit.content === null) fs.unlinkSync(edit.target);
+      else {
+        fs.mkdirSync(path.dirname(edit.target), { recursive: true });
+        fs.writeFileSync(edit.target, edit.content);
+      }
+    }
   }
   console.log(changes.length
     ? `${checkOnly ? 'Would change' : 'Generated'}: ${changes.join(', ')}`
-    : 'No ACE wrapper changes required.');
+    : 'No ACE wrapper or runtime skill changes required.');
   return changes;
 }
 
@@ -145,4 +219,6 @@ if (require.main === module) {
   }
 }
 
-module.exports = { ROLES, runtimeName, render, run };
+module.exports = {
+  ROLES, runtimeName, render, run, runtimeSkillArtifacts, SKILL_NAME, SKILL_SOURCE,
+};

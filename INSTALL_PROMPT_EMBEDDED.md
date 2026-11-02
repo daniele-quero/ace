@@ -18,9 +18,9 @@ ACE kit source while installing it.
   multiple agents.
 - Do not infer consent from silence or plain conversational context.
 - If the dedicated question tool is unavailable, stop and explain the blocker.
-- Never overwrite an existing ACE installation, persona, wrapper, registry, or
-  instruction block without showing the conflict and receiving an explicit
-  choice.
+- Never overwrite an existing ACE installation, persona, wrapper, runtime
+  skill, registry, or instruction block without showing the conflict and
+  receiving an explicit choice.
 
 ## Phase 0 - Establish roots and safety
 
@@ -43,6 +43,8 @@ Read, when present:
 - root instructions such as `AGENTS.md`, `CLAUDE.md`, and
   `.github/copilot-instructions.md`;
 - `.github/agents/**/*.agent.md` and `.claude/agents/**/*.md`;
+- existing `.github/skills/` and `.claude/skills/` directories, especially
+  same-name runtime-skill collisions;
 - project-specific agent registries, generators, manifests, or sync scripts;
 - existing `docs/agent-personas/` and agent-related workflow documentation;
 - frontmatter fields that define runtime name, description, model, tools,
@@ -107,6 +109,8 @@ must reflect discovery and include:
 - creating the missing counterpart when only one platform was detected.
 
 Do not create a platform apparatus that the user did not select.
+Use the same selection for installed runtime skills; do not create skill
+copies for disabled platforms.
 If neither platform is detected, ask directly whether to bootstrap GitHub
 Copilot, Claude Code, or both; do not assume the current installer runtime is
 the desired target platform.
@@ -216,6 +220,20 @@ lifecycle agents themselves use source personas.
    explicitly approves a model change.
 6. Do not create `docs/agent-personas/`.
 
+### Preserve the orchestrator's correction-only branch
+
+When merging `ace/templates/orchestrator-persona.md` or
+`ace/templates/orchestrator-inline.md`, retain the narrow distinction for a
+genuinely separate, explicitly submitted external `rectify-playbook`-only
+request. For the correction
+itself, run the skill's guarded workflow rather than normal trace writing,
+counter updates, threshold checks, or the ordinary learning lifecycle. Its
+own retrieval regeneration still runs.
+
+Do not classify ordinary or mixed work as correction-only. Ordinary tasks
+retain the complete embedded cycle. This is scoped orchestrator wiring, not
+global skill routing or a new worker duty.
+
 ## Phase 6 - Install the runtime
 
 1. Read `KIT_ROOT/ace/runtime-version.json` before copying. Its
@@ -223,24 +241,29 @@ lifecycle agents themselves use source personas.
    closed, mandatory framework inventory: create each parent directory and
    copy every listed regular file, including all scripts, `scripts/lib`
    helpers, schemas, prompts, templates, the embedded README pair, and the
-   update inspector. Do not install a hand-picked subset, and do not copy
-   either mediated README.
+   update inspector. This includes `ace/scripts/rectify_playbook.js` and the
+   complete kit-owned `ace/skills/rectify-playbook/` directory: `SKILL.md` and
+   `references/review.md`. Do not install a hand-picked subset, and do not
+   copy either mediated README.
 2. Copy `KIT_ROOT/ace/` to `TARGET_ROOT/ace/`, excluding:
    - `ace/config/project.json` if one somehow exists in the kit checkout;
-   - temporary files, test fixtures, generated wrappers, and runtime output.
-   The destination `ace/runtime-version.json` must be copied verbatim only
-   after every other kit-owned runtime file is in place, so it is an accurate
-   statement of the installed inventory.
+   - `ace/runtime-version.json`, deferred until Phase 9;
+   - temporary files, test fixtures, generated wrappers, platform skill
+     copies, and runtime output.
+   Do not copy the kit's `install-ace` or `update-ace` operator skills into
+   the host; they remain separate user-level tools.
 3. Before any project-specific configuration or generation, compare the
-   destination against that manifest and stop if any manifest-declared file is
-   absent, non-regular, or has a different normalized SHA-256. A missing
-   script, schema, prompt, template, or library is an incomplete installation,
-   not an optional feature.
+   copied runtime files against the kit's manifest and stop if any required
+   copied file is absent, non-regular, or has a different normalized SHA-256.
+   Defer only the manifest itself and generated assets to their later phases.
+   A missing script, schema, prompt, template, library, or canonical runtime
+   skill file is an incomplete installation, not an optional feature.
 4. Copy the empty `KIT_ROOT/playbooks/` skeleton to
    `TARGET_ROOT/playbooks/`.
-5. Do not copy traces, proposals, decisions, learned bullets, counters, or
-   state from the kit's source project. The kit directories must be empty
-   except for documentation, `.gitkeep`, and the initial empty state file.
+5. Do not copy traces, proposals, decisions, learned bullets, counters,
+   rectification audits, or state from the kit's source project. The kit
+   directories must be empty except for documentation, `.gitkeep`, and the
+   initial empty state file.
    Destination-owned runtime JSON created by ACE is project data: preserve it
    and keep it available for normal Git versioning.
 6. Copy `ace/config/project.template.json` to
@@ -275,7 +298,20 @@ lifecycle agents themselves use source personas.
    untracked runtime records appear in `git status`. Do not stage or commit
    automatically.
 
-## Phase 7 - Generate ACE agents and wire delegation
+## Phase 7 - Generate ACE assets and wire delegation
+
+The agent generator also installs and checks complete runtime-skill copies
+from `ace/skills/rectify-playbook/`: `.github/skills/rectify-playbook/` for
+enabled Copilot and `.claude/skills/rectify-playbook/` for enabled Claude.
+Never create a disabled platform's copy or replace a whole skills root;
+preserve every unrelated host skill.
+
+Inspect those exact destinations before generation. An absent or current copy,
+or a clean older copy proven by prior installed-manifest hashes, is safe to
+generate. Same-name unowned differences, locally modified contents,
+non-regular paths, and unknown extra files are conflicts. Resolve only
+explicitly approved conflicts within the exact `rectify-playbook/` subtree
+before regeneration; the generator must not overwrite disputed contents.
 
 1. Run `node ace/scripts/generate_ace_agents.js`.
 2. Verify the generated `reflector -> curator -> warden` delegation chain on
@@ -289,11 +325,38 @@ lifecycle agents themselves use source personas.
 4. Add the derived platform-specific reflector runtime name to the chosen
    orchestrator's declared delegates/agents using the destination's canonical
    registry when one exists.
-5. Ensure the orchestrator owns trace writing, counter updates, threshold
-   checks, and reflector invocation. Participating agents only return trace
+5. Ensure the orchestrator owns ordinary-task trace writing, counter updates,
+   threshold checks, and reflector invocation, retaining the explicit
+   correction-only branch above. Participating agents only return trace
    elements unless the destination explicitly assigns them a stronger role.
 6. If a new orchestrator was requested, create its selected-platform wrappers
    and register it through the destination's canonical mechanism.
+
+### Explicit external corrections
+
+Preserve `disable-model-invocation: true`: never enable automatic selection.
+Normal ACE roles and orchestration must never invoke or delegate this skill,
+relabel current-cycle work as external, or use it as a gate/evidence fallback.
+Only a genuinely separate explicit external request is eligible, subject to
+harness manual-invocation restrictions and independent review of its origin.
+
+The installed `rectify-playbook` skill handles explicitly submitted user or
+agent corrections outside ordinary learning, without mandatory traces. Keep
+its complete skill/checklist workflow: one explicitly named playbook, explicit
+existing `P-XXX` IDs, expected-before and replacement-after content, and a
+rationale. Missing or ambiguous targets block. Independent read-only subagent
+semantic review is mandatory; unavailable, rejected, or unknown review blocks
+application. The initial request authorizes application after successful
+review within its unchanged scope; seek a new decision only if scope, intent,
+or targets change.
+
+The skill and `references/review.md` own semantic review;
+`rectify_playbook.js` owns deterministic guards, hashes, separate
+`ace/state/rectifications/<id>.json` audits, retrieval regeneration, and
+interrupted-application resume. Existing contents only: no ADD/MERGE, moves,
+status changes, counter resets, fabricated traces/proposals/ordinary gate
+evidence, or consumption of pending lifecycle batches. Do not add automatic
+skill routing or rectification duties to worker prompts or personas.
 
 ## Phase 8 - Integrate global instructions
 
@@ -303,9 +366,13 @@ generated retrieval markers:
 - ACE is operational learning memory for this project;
 - selected agents read their scoped lessons before acting and cite applied
   IDs;
-- the orchestrator writes traces and runs counters plus threshold checks;
+- for ordinary tasks, the orchestrator writes traces and runs counters plus
+  threshold checks;
 - reflector, curator, and warden own their respective stages;
-- only warden may apply playbook changes after explicit human sign-off;
+- ordinary learning remains warden-only through `apply_delta.js`, with
+  separate explicit human sign-off and apply confirmations; the only
+  external-correction exception is explicitly invoked `rectify-playbook`
+  through `rectify_playbook.js` under its mandatory independent review;
 - higher-priority project and safety instructions always win.
 
 Do not duplicate a rule already present. Do not replace destination-specific
@@ -327,19 +394,32 @@ not a result to narrate away.
 If the destination uses a registry/generator, also run its existing sync and
 check commands. Do not install a new build/lint tool solely for ACE.
 
+After all generation, destination sync, and checks succeed, copy
+`KIT_ROOT/ace/runtime-version.json` verbatim to
+`TARGET_ROOT/ace/runtime-version.json` as the final kit-owned write. Verify
+byte-for-byte equality. If a later correction changes any kit-owned asset,
+repeat generation and checks as needed, then repeat this final manifest copy
+and byte verification.
+
 ## Phase 10 - Final verification
 
 Verify all of the following:
 
 - every path declared by `ace/runtime-version.json` under
   `ownership.kit_owned` is a regular file with the declared normalized SHA-256;
-- no required script, schema, prompt, template, or `scripts/lib` dependency
-  was omitted;
+- no required script, schema, prompt, template, `scripts/lib` dependency, or
+  canonical `ace/skills/rectify-playbook/` file was omitted;
+- the runtime manifest is verbatim from the kit and was the final kit-owned
+  write after all generation;
 - `ace/config/project.json` contains no unresolved `__PLACEHOLDER__`;
 - selected agents and only selected agents have scoped playbooks and ACE
   integration;
 - every configured agent name is unique;
 - generated ACE wrappers exist only for selected platforms;
+- complete `rectify-playbook` copies, including `references/review.md`, are
+  current on every enabled platform and no disabled-platform copy was created;
+- no runtime-skill conflict remains, unrelated host skills are unchanged, and
+  neither operator skill was installed into the host;
 - every declared lifecycle delegate exactly matches the generated lifecycle
   wrapper frontmatter `name` for that platform;
 - only `ownership.mode_specific.embedded` README files were installed;
@@ -356,6 +436,12 @@ Verify all of the following:
   does not propagate it, verify that the orchestrator can relay the warden's
   separate sign-off and apply questions and the user's explicit responses
   (using its own tool, or new user turns in the main chat);
+- the external-correction skill retains exact-target guards, mandatory
+  independent read-only review, initial-request authorization for unchanged
+  scope, and separate audits without weakening the ordinary learning cycle;
+- explicitly submitted correction-only requests skip normal trace, counter,
+  and threshold work for the correction itself; ordinary and mixed work are
+  not given that bypass;
 - global and scoped retrieval markers are current;
 - no learned data or references from the kit's source project were copied;
 - destination runtime JSON is not ignored and remains available for version

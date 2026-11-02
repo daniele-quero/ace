@@ -84,6 +84,16 @@ function acquireMutationLock(owner) {
       throw new Error(`Esiste un'applicazione ACE incompleta: ${incomplete.join(', ')}. Recuperala manualmente prima di altre scritture.`);
     }
   }
+  const rectificationsDir = path.join(ACE_ROOT, 'state', 'rectifications');
+  assertSafeWritePath(rectificationsDir);
+  if (fs.existsSync(rectificationsDir)) {
+    for (const file of fs.readdirSync(rectificationsDir).filter((name) => name.endsWith('.json'))) {
+      const record = JSON.parse(fs.readFileSync(path.join(rectificationsDir, file), 'utf8'));
+      if (record.status === 'applying' && owner !== 'rectify_playbook') {
+        throw new Error(`Incomplete playbook rectification: ${record.rectification_id}. Resume it before other ACE writes.`);
+      }
+    }
+  }
   fs.mkdirSync(path.dirname(lockPath), { recursive: true });
   let descriptor;
   try {
@@ -107,6 +117,18 @@ function acquireMutationLock(owner) {
     released = true;
     if (fs.existsSync(lockPath)) fs.unlinkSync(lockPath);
   };
+}
+
+function atomicWrite(targetPath, content) {
+  assertSafeWritePath(targetPath);
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+  const temporary = `${targetPath}.${process.pid}.tmp`;
+  try {
+    fs.writeFileSync(temporary, content);
+    fs.renameSync(temporary, targetPath);
+  } finally {
+    if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
+  }
 }
 
 // Nomi di agente validi per questo progetto (orchestratore + subagenti),
@@ -541,13 +563,14 @@ function detectIdCollisions() {
   return collisions;
 }
 
-function computeReviewStateHash() {
+function computeReviewStateHash(excludedPaths = []) {
   const relativePaths = [
     path.relative(REPO_ROOT, PROJECT_CONFIG_PATH),
     ...listPlaybookFiles(),
     ...listArchiveFiles(),
     path.join('ace', 'state', 'live-exclusions.json'),
-  ].map((relativePath) => relativePath.replace(/\\/g, '/')).sort();
+  ].map((relativePath) => relativePath.replace(/\\/g, '/'))
+    .filter((relativePath) => !excludedPaths.includes(relativePath)).sort();
   const hash = crypto.createHash('sha256');
   for (const relativePath of relativePaths) {
     const absolutePath = path.join(REPO_ROOT, relativePath);
@@ -580,6 +603,8 @@ module.exports = {
   detectIdCollisions,
   SAFE_SCOPE_ID_RE,
   assertSafeWritePath,
+  atomicWrite,
   acquireMutationLock,
   computeReviewStateHash,
+  BULLET_HEADING_RE,
 };

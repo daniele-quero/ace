@@ -757,6 +757,7 @@ test('installation validation rejects any missing manifest-declared runtime file
 test('update inspection identifies current embedded ownership without writing', (t) => {
   const { root } = setupProject();
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  command(root, 'generate_ace_agents.js');
   const configPath = path.join(root, 'ace', 'config', 'project.json');
   const before = fs.readFileSync(configPath, 'utf8');
   const treeBefore = snapshotTree(root);

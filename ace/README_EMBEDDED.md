@@ -34,6 +34,29 @@ classes, and hashes for kit-owned files. Treat both as evidence for the update
 procedure, never as authority to overwrite project configuration, operational
 behavior, playbooks, traces, or state.
 
+## Explicit external playbook corrections
+
+Automatic skill selection is disabled. Normal ACE work must never invoke or
+delegate this skill, relabel a task as external, or use it as a fallback for
+blocked learning. Only a separate explicit external request is eligible,
+subject to harness manual-invocation restrictions and review of its origin.
+
+Every installation and update/upgrade ships the
+[rectify-playbook skill](skills/rectify-playbook/SKILL.md), including its
+[independent review contract](skills/rectify-playbook/references/review.md).
+`generate_ace_agents.js` installs the complete skill for each enabled platform;
+`--check` and installation validation verify its presence and freshness.
+
+Invoke it with an explicit playbook, exact P-XXX IDs and the requested correction.
+Missing targets fail. It requires a separate read-only reviewer, but no traces
+or normal lifecycle batch. The initial submitted request authorizes the reviewed
+scope; changed scope requires clarification. The
+[rectification script](scripts/rectify_playbook.js) preserves metadata and
+untargeted content, records a separate audit under `ace/state/rectifications/`,
+and runs retrieval. Excluded lessons remain excluded and historical counters
+are not reset. This explicit path does not weaken the ordinary cycle's Warden
+gate or its two human checkpoints.
+
 ## The ACE cycle, top-down
 
 The best way to read ACE is from the outside in:
@@ -191,7 +214,7 @@ mechanical validation -> explicit question -> human review -> signed-off write
 
 This matters because the system is learning from real execution data, not manufacturing confidence. `gate.js` can check structure and consistency, but it cannot reliably judge semantic conflict between a new rule and the existing `playbook` in the same scope. That remains a human judgment.
 
-The human sign-off is therefore not optional decoration. It is the mechanism that turns a proposed change into a real runtime decision. Without that explicit confirmation, `apply_delta.js` refuses to write, and `retrieval.js` will not regenerate the operational `instructions` from the new state.
+For changes produced by the learning cycle, human sign-off is not optional decoration. It is the mechanism that turns a proposed change into a real runtime decision. Without that explicit confirmation, `apply_delta.js` refuses to write. Explicit external rectifications use the separate reviewed skill described above, not fabricated learning-cycle sign-offs.
 
 The warden requests two separate approvals, one before signing the gate and
 another before applying the delta. It prefers a dedicated question tool.

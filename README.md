@@ -66,6 +66,10 @@ permission to overwrite project-owned files or learned/runtime state. The
 complete reconciliation and validation rules remain in `UPDATE_PROMPT.md` and
 are intentionally not duplicated here.
 
+Installers and the updater copy that manifest verbatim as the final kit-owned
+write after all generation. Prior installed hashes establish provenance when
+upgrading generated runtime-skill copies.
+
 The manifest's `ownership.mode_specific` section lists documentation by
 integration mode. An installation copies only the README pair for its selected
 mode: `README_EMBEDDED(.IT).md` for embedded or `README_MEDIATED(.IT).md` for
@@ -85,10 +89,10 @@ The kit provides two project-level operator skills:
   installation within its current paradigm while preserving project-owned
   behavior, selected models, learned data, and runtime state.
 
-The files under `.github/skills/` are the canonical, versioned sources. They
-do not replace the detailed prompts; each skill classifies the operation,
-loads the appropriate prompt, and adds a mandatory effective-contract
-baseline and equivalence gate.
+These two directories under `.github/skills/` are the canonical, versioned
+operator-skill sources. They do not replace the detailed prompts; each skill
+classifies the operation, loads the appropriate prompt, and adds a mandatory
+effective-contract baseline and equivalence gate.
 
 The rationale and detailed findings behind this preservation protocol are
 documented in [ANALISI_PERDITE_PERSONAS_AGENTI.md](ANALISI_PERDITE_PERSONAS_AGENTI.md).
@@ -176,20 +180,95 @@ globally, reroute the standard orchestrator, or modify workers. The existing
 runtime name keeps normal behavior; only the same name suffixed with `-ace`
 performs mapping, lesson retrieval, delegation, trace capture, and learning.
 
+## Installed runtime skill: `rectify-playbook`
+
+`rectify-playbook` handles explicit user- or agent-submitted external
+corrections outside ordinary ACE learning, without requiring an execution
+trace. It ships on clean embedded and mediated installs and every update or
+upgrade, including older installations where it is missing. Unlike the two
+user-level operator skills, it is installed in each host project.
+
+Automatic model selection is disabled (`disable-model-invocation: true`).
+Normal ACE roles and orchestration must never invoke or delegate this skill,
+relabel current-cycle work as external, or use it after a failed gate or missing
+evidence. Only a genuinely separate explicit external request is eligible,
+subject to harness manual-invocation restrictions. The independent reviewer
+must reject normal-cycle work or unclear origin before reviewing the correction.
+
+The complete kit-owned source is `ace/skills/rectify-playbook/`, containing
+`SKILL.md` and `references/review.md`. `generate_ace_agents.js` installs and
+checks complete copies at `.github/skills/rectify-playbook/` for enabled
+Copilot and `.claude/skills/rectify-playbook/` for enabled Claude; it creates
+nothing for disabled platforms and preserves unrelated host skills. Absent,
+current, or clean prior-manifest-owned copies are safe to reconcile.
+Same-name unowned differences, local modifications, and unknown extra files
+require explicit conflict resolution in that exact subtree, never replacement
+of a whole skills root.
+
+A request must identify exactly one playbook and explicit existing `P-XXX`
+IDs, with expected-before content, replacement-after content, and rationale.
+Missing or ambiguous targets fail. Corrections change existing contents only:
+no ADD/MERGE, moves, lifecycle-status changes, or counter resets. They neither
+fabricate traces, proposals, or ordinary gate/sign-off evidence nor consume
+pending lifecycle batches.
+
+The skill and its review checklist require independent **read-only subagent
+semantic review**; unavailable, rejected, or unknown review blocks application.
+The initial request authorizes application after successful review within its
+unchanged scope. Seek renewed human approval only if scope, intent, or targets
+change. This is an explicit skill invocation, not always-on routing or a new
+worker/persona duty.
+
+For a genuinely separate, explicitly submitted external `rectify-playbook`-only
+request, orchestrator wiring skips normal trace, counter, and threshold work for
+the correction itself; mediated wiring also skips `prepare_delegation.js`, `capture_trace.js`,
+and `finalize_task.js`. The correction still regenerates retrieval. Ordinary
+or mixed work is not correction-only and retains full lifecycle handling.
+
+Replace the illustrative path, IDs, and exact text below with actual project
+values:
+
+```text
+Use rectify-playbook on playbooks/backend.md, existing IDs P-014 and P-027.
+P-014: expected before "Use npm install in CI.";
+replacement after "Use npm ci in CI.";
+rationale: CI must use the committed lockfile.
+P-027: expected before "Retry every HTTP failure.";
+replacement after "Retry only transient HTTP failures.";
+rationale: permanent failures require explicit handling.
+Apply these exact corrections if independent read-only semantic review accepts them.
+```
+
+The script owns deterministic guards, hashes, separate audits, and retrieval;
+it does not replace the skill's semantic review workflow:
+
+```text
+node ace/scripts/rectify_playbook.js --request <file> --check
+node ace/scripts/rectify_playbook.js --request <file> --review <file> --apply
+node ace/scripts/rectify_playbook.js --resume <id>
+```
+
+`--check` produces a read-only plan and hashes. `--apply` validates reviewed
+exact-target corrections, writes the playbook and a separate
+`ace/state/rectifications/<id>.json` audit, and regenerates retrieval.
+`--resume` continues an interrupted audited application, not a new scope.
+
 ## What ACE does
+
+The ordinary learning cycle is unchanged:
 
 1. An orchestrator records a compact **trace** after a relevant task.
 2. A batch **reflector** derives candidate lessons from trace evidence.
 3. A **curator** emits typed decisions:
    `ADD`/`UPDATE`/`DEPRECATE`/`MERGE`/`PROMOTE`/`REJECT`.
-4. A **warden** runs deterministic validation and presents semantic decisions
-   for explicit human review.
-5. Only after verifiable sign-off does `apply_delta.js` update the durable
-   playbook and regenerate operational instructions.
+4. A **warden** runs deterministic validation and obtains separate explicit
+   human sign-off and apply confirmations.
+5. Only warden runs `apply_delta.js` after both checkpoints to update the
+   durable playbook and regenerate operational instructions.
 
 ```text
 trace → proposal → decision → gate → human sign-off
-      → playbook update → retrieval → better next session
+      → human apply approval → playbook update → retrieval → better next session
 ```
 
 The playbook is the reviewable source of truth, including lifecycle state,
@@ -203,8 +282,10 @@ The opt-in wrapper maps a task to canonical configured worker/family scopes,
 retrieves active global and scoped lessons, and delegates through the existing
 worker runtime without changing it. It then collects the result and evidence,
 writes the trace, updates counters, and checks thresholds. When due, it invokes
-reflector → curator → warden. Warden approval gates the only durable write, and
-retrieval is regenerated afterward.
+reflector → curator → warden. Within this ordinary learning cycle, only warden
+signs off and applies after two explicit human checkpoints, and retrieval is
+regenerated afterward. Explicit `rectify-playbook` invocation remains separate
+and does not activate this cycle.
 
 Workers may return task facts, but the mediated orchestrator owns mapping,
 lesson delivery, trace capture, and lifecycle orchestration. The canonical
@@ -227,7 +308,10 @@ ace/
 ├── README_MEDIATED_IT.md    # mediated architecture and lifecycle (Italian)
 ├── runtime-version.json     # version, ownership, and kit-file hash contract
 ├── prompts/                 # reflector, curator, and warden behavior
-├── scripts/                 # generation, inspection, retrieval, gate, apply
+├── scripts/                 # generation, inspection, retrieval, gate, apply, rectification
+├── skills/rectify-playbook/  # canonical installed runtime skill
+│   ├── SKILL.md
+│   └── references/review.md
 ├── schema/                  # trace and playbook bullet contracts
 ├── templates/               # installer inputs for generated integrations
 ├── traces/                  # capture guide and empty processed state
@@ -242,12 +326,16 @@ package.json                 # npm test entry point
 - Runtime identities, team labels, paths, platforms, and tools come from the
   host's materialized `ace/config/project.json`.
 - Reflector and curator propose and decide; they never directly edit playbooks.
-- Warden requires deterministic validation and two separate explicit human
-  confirmations. Prefer the host's question tool; when it is unavailable to
-  the delegated warden, the orchestrator relays each question and actual
-  user response (via its question tool or an asynchronous new user turn).
-  Only the warden executes sign-off and apply; unanswered checkpoints block.
-- `apply_delta.js` is the sole durable playbook mutation path after sign-off.
+- Ordinary learning requires warden's deterministic validation and two
+  separate explicit human confirmations. Prefer the host's question tool; when
+  it is unavailable to the delegated warden, the orchestrator relays each
+  question and actual user response (via its question tool or an asynchronous
+  new user turn). Only warden executes ordinary sign-off and apply; unanswered
+  checkpoints block.
+- `apply_delta.js` is the sole ordinary-learning playbook mutation path after
+  sign-off. The only external-correction exception is explicit
+  `rectify-playbook` through `rectify_playbook.js`, with mandatory independent
+  read-only semantic review, exact-target guards, and a separate audit.
 - Higher-priority project and safety instructions always win.
 - Installers preserve dirty-worktree changes and do not copy runtime evidence
   or state from another project.

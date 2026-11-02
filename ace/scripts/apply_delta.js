@@ -18,7 +18,7 @@ const { spawnSync } = require('child_process');
 const {
   REPO_ROOT, scopeToRelPath, parsePlaybookFile, serializeFile,
   stripEmptyPlaceholder, listPlaybookFiles, defaultPlaybookSkeleton, assertSafeWritePath,
-  acquireMutationLock, computeReviewStateHash,
+  acquireMutationLock, computeReviewStateHash, atomicWrite,
 } = require('./lib/playbook');
 const retrieval = require('./retrieval');
 
@@ -28,14 +28,6 @@ function readJSON(p) {
 
 function sha256File(p) {
   return crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
-}
-
-function atomicWrite(targetPath, content) {
-  assertSafeWritePath(targetPath);
-  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-  const temporary = `${targetPath}.${process.pid}.tmp`;
-  fs.writeFileSync(temporary, content);
-  fs.renameSync(temporary, targetPath);
 }
 
 function recoverPendingApplications() {
