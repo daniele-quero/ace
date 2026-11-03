@@ -86,9 +86,12 @@ function compareSemver(left, right) {
   return 0;
 }
 
+function hashContent(content) {
+  return crypto.createHash('sha256').update(content.replace(/\r\n/g, '\n'), 'utf8').digest('hex');
+}
+
 function hashFile(file) {
-  const content = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
-  return crypto.createHash('sha256').update(content, 'utf8').digest('hex');
+  return hashContent(fs.readFileSync(file, 'utf8'));
 }
 
 function readJson(root, relative) {
@@ -351,7 +354,7 @@ function inspect(targetRoot) {
       });
     };
     for (const artifact of artifacts) {
-      inspectSkillFile(artifact.target, artifact.source, hashFile(safePath(KIT_ROOT, artifact.source)));
+      inspectSkillFile(artifact.target, artifact.source, hashContent(artifact.content));
     }
     for (const directory of directories) {
       try {

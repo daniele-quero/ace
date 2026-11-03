@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const test = require('node:test');
+const { copyRuntimeKit } = require('./helpers/copy_runtime_kit');
 
 const KIT_ROOT = path.resolve(__dirname, '..');
 
@@ -78,7 +79,7 @@ function setupProject({
   const fixtureRoot = path.join(KIT_ROOT, '.test-work');
   fs.mkdirSync(fixtureRoot, { recursive: true });
   const root = fs.mkdtempSync(path.join(fixtureRoot, 'ace-kit-'));
-  fs.cpSync(path.join(KIT_ROOT, 'ace'), path.join(root, 'ace'), { recursive: true });
+  copyRuntimeKit(KIT_ROOT, root);
   fs.cpSync(path.join(KIT_ROOT, 'playbooks'), path.join(root, 'playbooks'), { recursive: true });
   fs.copyFileSync(path.join(KIT_ROOT, '.gitignore'), path.join(root, '.gitignore'));
 
@@ -1045,34 +1046,40 @@ test('mediated installer covers the runtime contract', () => {
 });
 
 test('operator skills route operations and preserve effective contracts', () => {
+  const kitRoot = '<KIT_ROOT>';
   const skills = [
     {
       file: '.github/skills/install-ace/SKILL.md',
       name: 'install-ace',
       required: [
-        'INSTALL_PROMPT_EMBEDDED.md',
-        'INSTALL_PROMPT_MEDIATED.md',
+        `${kitRoot}\\INSTALL_PROMPT_EMBEDDED.md`,
+        `${kitRoot}\\INSTALL_PROMPT_MEDIATED.md`,
         'Never treat the user-level skill directory or `TARGET_ROOT` as the kit',
         'Keep harness and model independent',
         'Build a preservation matrix',
         'unexplained-loss',
         'runtime JSON',
         'not be ignored',
+        'invoke `/update-ace`',
+        '## Deliver the `rectify-playbook` runtime skill',
       ],
     },
     {
       file: '.github/skills/update-ace/SKILL.md',
       name: 'update-ace',
       required: [
-        'UPDATE_PROMPT.md',
+        `${kitRoot}\\UPDATE_PROMPT.md`,
         'Never use the target',
         'Harness and model are independent',
         'Reconcile with an explicit matrix',
         'Run this exact command as soon as the roots have been verified',
+        `node "${kitRoot}\\ace\\scripts\\inspect_update.js" --target "<TARGET_ROOT>"`,
         'runtime and learned state byte-for-byte',
         'behavioral loss is unexplained',
         'trackable by Git',
         'not ignored',
+        'invoke `/install-ace`',
+        '## Deliver the `rectify-playbook` runtime skill',
       ],
     },
   ];
@@ -1080,13 +1087,51 @@ test('operator skills route operations and preserve effective contracts', () => 
   for (const skill of skills) {
     const content = fs.readFileSync(path.join(KIT_ROOT, skill.file), 'utf8');
     assert.match(content, new RegExp(`^---\\r?\\nname: ${skill.name}\\r?\\n`, 'm'));
-    assert.match(content, /^description: .+\r?$/m);
-    for (const required of skill.required) {
-      assert.match(
-        content,
-        new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
-        `${skill.file} missing contract text: ${required}`,
-      );
+    const frontmatter = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/)[1];
+    assert.match(frontmatter, new RegExp(
+      `^description: "USER-INVOKED ONLY: run solely when the user explicitly invokes /${skill.name};`, 'm',
+    ));
+    assert.match(frontmatter, /^user-invocable: true\r?$/m);
+    assert.match(frontmatter, /^disable-model-invocation: true\r?$/m);
+    assert.match(content, /## Invocation gate: user-invoked only/);
+    assert.match(content, new RegExp(`normally with \`/${skill.name}\``));
+    for (const required of [
+      ...skill.required,
+      '`KIT_ROOT` must be the absolute root of the ACE kit checkout.',
+      `${kitRoot}\\.github\\skills\\rectify-playbook\\`,
+      '<TARGET_ROOT>\\ace\\skills\\rectify-playbook\\SKILL.md',
+      '<TARGET_ROOT>\\ace\\skills\\rectify-playbook\\references\\review.md',
+      '<TARGET_ROOT>\\.github\\skills\\rectify-playbook\\',
+      '<TARGET_ROOT>\\.claude\\skills\\rectify-playbook\\',
+      'node "<TARGET_ROOT>\\ace\\scripts\\generate_ace_agents.js"',
+      '`user-invocable: true`, `disable-model-invocation: true`',
+    ]) {
+      assert.ok(content.includes(required), `${skill.file} missing contract text: ${required}`);
+    }
+    assert.doesNotMatch(content, /`(?:\.{1,2}[\\/])?(?:ace|\.github|\.claude|playbooks|docs)[\\/]/,
+      `${skill.file} must not reference a relative path`);
+    assert.doesNotMatch(content, /`(?:INSTALL_PROMPT_EMBEDDED|INSTALL_PROMPT_MEDIATED|UPDATE_PROMPT)\.md`/);
+    assert.doesNotMatch(content, /\bnode\s+"?(?:\.{1,2}[\\/])?ace[\\/]/);
+    for (const match of content.matchAll(/<KIT_ROOT>((?:\\[^\s`"'|)\\]*)*)/g)) {
+      const relative = match[1].replace(/[.,;:]+$/, '').split('\\').filter(Boolean);
+      assert.ok(fs.existsSync(path.join(KIT_ROOT, ...relative)),
+        `${skill.file} references a missing kit path: ${match[0]}`);
+    }
+  }
+});
+
+test('installation and update prompts anchor every path to absolute roots', () => {
+  for (const file of ['INSTALL_PROMPT_EMBEDDED.md', 'INSTALL_PROMPT_MEDIATED.md', 'UPDATE_PROMPT.md']) {
+    const prompt = fs.readFileSync(path.join(KIT_ROOT, file), 'utf8');
+    assert.match(prompt, /## Absolute path convention/);
+    assert.match(prompt, /This prompt works from any current directory\./);
+    assert.match(prompt, /Never resolve a bare relative path against the current working directory/);
+    assert.match(prompt, /never write absolute machine paths into\s+destination agents/);
+    assert.doesNotMatch(prompt, /`(?:\.{1,2}\/)?(?:ace|\.github|\.claude|playbooks|docs)\//,
+      `${file} must anchor file references to KIT_ROOT or TARGET_ROOT`);
+    assert.doesNotMatch(prompt, /`git (?:status|diff)`/);
+    for (const match of prompt.matchAll(/(?:^|`)\s*node\s+(\S+)/gm)) {
+      assert.match(match[1], /^"?<(?:KIT_ROOT|TARGET_ROOT)>\//, `${file} runs a relative script: ${match[0]}`);
     }
   }
 });

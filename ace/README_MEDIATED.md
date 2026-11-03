@@ -39,18 +39,24 @@ project-owned behavior and runtime data.
 
 ## Explicit external playbook corrections
 
-Automatic skill selection is disabled. Normal ACE work must never invoke or
-delegate this skill, relabel a task as external, or use it as a fallback for
-blocked learning. Only a separate explicit external request is eligible,
-subject to harness manual-invocation restrictions and review of its origin.
+`rectify-playbook` is user-invocable only: automatic skill selection is
+disabled (`disable-model-invocation: true`), and only the user may invoke it,
+for example with `/rectify-playbook`. Agents, subagents, handoffs and normal
+ACE work must never invoke, delegate or forward this skill, relabel a task as
+external, or use it as a fallback for blocked learning. Only a separate
+explicit external request invoked by the user is eligible, subject to harness
+manual-invocation restrictions and review of its origin.
 
-Every installation and update/upgrade ships the
-[rectify-playbook skill](skills/rectify-playbook/SKILL.md) and its
-[independent review contract](skills/rectify-playbook/references/review.md).
+Every installation and update/upgrade ships `rectify-playbook` and its
+`references/review.md` contract. The kit source is
+`.github/skills/rectify-playbook/`; manifest `source_paths` maps it to the
+internal installed `ace/skills/rectify-playbook/` assets.
 The existing generator deploys complete project-skill copies only for enabled
-platforms. Generation checks and installation validation cover these assets.
+platforms: `.github/skills/rectify-playbook/` for Copilot and
+`.claude/skills/rectify-playbook/` for Claude.
+Generation checks and installation validation cover these assets.
 
-An explicit user or delegated agent request must name one playbook, exact
+The user's explicit invocation must name one playbook, exact
 P-XXX targets and the intended correction. A separate read-only reviewer is
 mandatory; traces and lifecycle batches are not. The initial request authorizes
 only the reviewed scope, without another unchanged-scope approval.

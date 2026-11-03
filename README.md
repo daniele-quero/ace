@@ -70,6 +70,12 @@ Installers and the updater copy that manifest verbatim as the final kit-owned
 write after all generation. Prior installed hashes establish provenance when
 upgrading generated runtime-skill copies.
 
+Manifest `source_paths` maps installed kit-owned paths to their canonical kit
+sources when the paths differ. Copy from `KIT_ROOT/source_paths[path]` to
+`TARGET_ROOT/path`; an unmapped file keeps the same relative source path.
+This keeps installed runtime paths compatible while the skill source lives
+under `.github/skills/`.
+
 The manifest's `ownership.mode_specific` section lists documentation by
 integration mode. An installation copies only the README pair for its selected
 mode: `README_EMBEDDED(.IT).md` for embedded or `README_MEDIATED(.IT).md` for
@@ -83,89 +89,110 @@ names rather than bare role labels.
 The kit provides two project-level operator skills:
 
 - [install-ace](.github/skills/install-ace/SKILL.md) routes clean
-  installations to the embedded or mediated prompt and requires a pre/post
-  behavioral preservation check;
+  installations to the embedded or mediated prompt, delivers the
+  `rectify-playbook` runtime skill, and requires a pre/post behavioral
+  preservation check;
 - [update-ace](.github/skills/update-ace/SKILL.md) updates an existing
-  installation within its current paradigm while preserving project-owned
-  behavior, selected models, learned data, and runtime state.
+  installation within its current paradigm, installs or refreshes
+  `rectify-playbook`, and preserves project-owned behavior, selected models,
+  learned data, and runtime state.
 
 These two directories under `.github/skills/` are the canonical, versioned
 operator-skill sources. They do not replace the detailed prompts; each skill
 classifies the operation, loads the appropriate prompt, and adds a mandatory
 effective-contract baseline and equivalence gate.
 
+Both operator skills, like `rectify-playbook`, are **user-invoked only**. The
+constraint appears in the `description`, in an explicit invocation gate in the
+body, and as `disable-model-invocation: true` in the frontmatter. The agent
+never selects them automatically, and no agent, subagent, handoff, or other
+skill may invoke them. Start them with `/install-ace` or `/update-ace`; a
+plain-language request such as “install ACE here” does not load them.
+
+The operator skills require `KIT_ROOT` to be the absolute path of this
+checkout, verified to contain the referenced files. Supply that path when
+invoking a user-level copy from another project; from this checkout, the
+active workspace root may be used after verification. The installation and
+update prompts anchor every path to the absolute `KIT_ROOT` or `TARGET_ROOT`
+and run scripts by absolute path. A skill never searches the disk for a kit
+and never uses its own directory or the target's installed runtime as the kit
+source.
+
 The rationale and detailed findings behind this preservation protocol are
 documented in [ANALISI_PERDITE_PERSONAS_AGENTI.md](ANALISI_PERDITE_PERSONAS_AGENTI.md).
 
-When the harness discovers project skills, invoke them while the ACE kit is
-the active workspace and provide the target repository path. To make requests
-such as “install ACE here” or “update ACE” discoverable while working directly
-inside another repository, publish or copy these two skill directories to the
-harness's supported user-level skill directory. Preserve the directory names
-and refresh the user copies from this repository when the kit changes. The
-repository copies remain the source of truth; do not install operator skills
-into each target as part of the ACE runtime. A user-level copy resolves
-`KIT_ROOT` independently from its own location: supply or configure the local
-ACE kit path when it cannot be uniquely discovered. It must never use its own
-directory or the target's installed runtime as the kit source.
+To use the operator skills while working directly inside another repository,
+publish or copy these two skill directories unchanged to the harness's
+supported user-level skill directory (for GitHub Copilot,
+`~/.copilot/skills/`). Preserve the directory names and refresh the user
+copies from this repository when the kit changes. The repository copies remain
+the source of truth; do not install operator skills into each target as part
+of the ACE runtime.
 
 ### Install the operator skills from chat
 
 Open the ACE kit as the active workspace and ask the chat agent:
 
 ```text
-Install the ACE operator skills from <KIT_ROOT>/.github/skills/install-ace
-and <KIT_ROOT>/.github/skills/update-ace into the user-level skill directory
-supported by this harness. Keep the repository copies as the source of truth,
-do not modify their contents, do not install ACE into this repository, and
-verify that both user-level skills are discoverable.
+Install the ACE operator skills from
+<KIT_ROOT>\.github\skills\install-ace and
+<KIT_ROOT>\.github\skills\update-ace into the user-level skill directory
+supported by this harness. Here, KIT_ROOT is the absolute path of this
+checkout. Copy each directory exactly, keep the repository copies as the
+source of truth, do not install ACE into this repository, and verify that both
+skills appear in the / menu as user-invoked only.
 ```
 
-Replace `<KIT_ROOT>` with the absolute path of this repository. The agent must
-resolve the harness-supported user skill location rather than inventing one.
-If the harness loads user skills only when a chat starts, open a new chat after
-the copy. Repeat the same request after updating the kit to refresh the
-user-level copies.
+Provide the absolute path of your kit checkout when invoking the skills from
+another project. The agent must resolve the harness-supported user skill
+location rather than inventing one. If the harness loads user skills only when
+a chat starts, open a new chat after the copy. Repeat the same request after
+updating the kit to refresh the user-level copies. Do not publish
+`rectify-playbook` this way: the installers and the updater install it in each
+host project.
 
 ### Start an installation from chat
 
 Open the destination repository as the active workspace, start a chat in which
-the user-level skills are available, and provide both the kit and destination
-paths:
+the user-level skills are available, and invoke the skill explicitly with the
+absolute destination path:
 
 ```text
-Install ACE in this repository using the install-ace skill.
-KIT_ROOT is <KIT_ROOT>.
-TARGET_ROOT is <TARGET_ROOT>.
+/install-ace Install ACE in this repository.
+TARGET_ROOT is <absolute path of this repository>.
 Use embedded integration.
 Use the personas paradigm for the agent team.
 ```
 
-Omit the persona line when the default agent representation is preferred. Use
+Provide `KIT_ROOT is <absolute kit path>.` when invoking a user-level copy from
+another project; from this checkout, the active workspace root may be used
+after verification. Omit the persona line when the default agent
+representation is preferred. Use
 `Use mediated integration` instead of `Use embedded integration` for strict
 opt-in mediation. The skill must classify the operation as a clean
-installation, load the matching canonical installation prompt from `KIT_ROOT`,
-preserve the target's effective agent contracts, run the required checks, and
-report the preservation matrix. If ACE is already present, it must route to
-update rather than treating the repository as a clean target.
+installation, load the matching canonical installation prompt by absolute
+path, deliver `rectify-playbook`, preserve the target's effective agent
+contracts, run the required checks, and report the preservation matrix. If ACE
+is already present, it stops and asks you to invoke `/update-ace` instead of
+treating the repository as a clean target.
 
 ### Start an update from chat
 
-Open the installed project as the active workspace and ask:
+Open the installed project as the active workspace and invoke:
 
 ```text
-Update the existing ACE installation in this repository using the update-ace
-skill.
-KIT_ROOT is <KIT_ROOT>.
-TARGET_ROOT is <TARGET_ROOT>.
+/update-ace Update the existing ACE installation in this repository.
+TARGET_ROOT is <absolute path of this repository>.
 Preserve the installed integration paradigm, project-owned agent behavior,
 selected models, configuration, learned data, and runtime state.
 ```
 
-The skill must use [UPDATE_PROMPT.md](UPDATE_PROMPT.md) and the update
-inspector from `KIT_ROOT`, never the possibly stale installed copy under
-`TARGET_ROOT`. A request to change between embedded and mediated is a migration,
-not an update, and requires a separately reviewed plan and explicit approval.
+The skill uses the pinned `KIT_ROOT` unless the invocation supplies another
+absolute kit path. It must use [UPDATE_PROMPT.md](UPDATE_PROMPT.md) and the
+update inspector from `KIT_ROOT`, never the possibly stale installed copy under
+`TARGET_ROOT`, and it installs or refreshes `rectify-playbook`. A request to
+change between embedded and mediated is a migration, not an update, and
+requires a separately reviewed plan and explicit approval.
 Add `Use the personas paradigm for the agent team.` when the update should
 preserve or adopt that representation.
 
@@ -182,22 +209,30 @@ performs mapping, lesson retrieval, delegation, trace capture, and learning.
 
 ## Installed runtime skill: `rectify-playbook`
 
-`rectify-playbook` handles explicit user- or agent-submitted external
-corrections outside ordinary ACE learning, without requiring an execution
+`rectify-playbook` handles explicit, user-invoked external corrections
+outside ordinary ACE learning, without requiring an execution
 trace. It ships on clean embedded and mediated installs and every update or
 upgrade, including older installations where it is missing. Unlike the two
 user-level operator skills, it is installed in each host project.
 
-Automatic model selection is disabled (`disable-model-invocation: true`).
-Normal ACE roles and orchestration must never invoke or delegate this skill,
-relabel current-cycle work as external, or use it after a failed gate or missing
-evidence. Only a genuinely separate explicit external request is eligible,
-subject to harness manual-invocation restrictions. The independent reviewer
-must reject normal-cycle work or unclear origin before reviewing the correction.
+It is user-invoked only: the constraint appears in its `description` and entry
+gate, and `disable-model-invocation: true` disables automatic model selection.
+Only the user may invoke it, for example with `/rectify-playbook`. Agents,
+subagents, handoffs, normal ACE roles, and orchestration must never invoke,
+delegate, or forward this skill, relabel current-cycle work as external, or
+use it after a failed gate or missing evidence. Only a genuinely separate
+explicit external request invoked by the user is eligible, subject to harness
+manual-invocation restrictions. The independent reviewer must reject
+normal-cycle work, agent-initiated invocations, or unclear origin before
+reviewing the correction.
 
-The complete kit-owned source is `ace/skills/rectify-playbook/`, containing
-`SKILL.md` and `references/review.md`. `generate_ace_agents.js` installs and
-checks complete copies at `.github/skills/rectify-playbook/` for enabled
+The complete kit-owned source is
+[`.github/skills/rectify-playbook/`](.github/skills/rectify-playbook/SKILL.md),
+containing `SKILL.md` and `references/review.md`. Installers use manifest
+`source_paths` to copy these into internal `ace/skills/rectify-playbook/`
+runtime assets without changing existing installed paths.
+`generate_ace_agents.js` installs and checks complete invocable copies at
+`.github/skills/rectify-playbook/` for enabled
 Copilot and `.claude/skills/rectify-playbook/` for enabled Claude; it creates
 nothing for disabled platforms and preserves unrelated host skills. Absent,
 current, or clean prior-manifest-owned copies are safe to reconcile.
@@ -216,20 +251,21 @@ The skill and its review checklist require independent **read-only subagent
 semantic review**; unavailable, rejected, or unknown review blocks application.
 The initial request authorizes application after successful review within its
 unchanged scope. Seek renewed human approval only if scope, intent, or targets
-change. This is an explicit skill invocation, not always-on routing or a new
-worker/persona duty.
+change. This is an explicit user invocation of the skill, not always-on
+routing or a new worker/persona duty.
 
-For a genuinely separate, explicitly submitted external `rectify-playbook`-only
-request, orchestrator wiring skips normal trace, counter, and threshold work for
-the correction itself; mediated wiring also skips `prepare_delegation.js`, `capture_trace.js`,
-and `finalize_task.js`. The correction still regenerates retrieval. Ordinary
-or mixed work is not correction-only and retains full lifecycle handling.
+For a genuinely separate external `rectify-playbook`-only request that the
+user invoked directly, orchestrator wiring skips normal trace, counter, and
+threshold work for the correction itself; mediated wiring also skips
+`prepare_delegation.js`, `capture_trace.js`, and `finalize_task.js`. The
+correction still regenerates retrieval. Ordinary or mixed work is not
+correction-only and retains full lifecycle handling.
 
 Replace the illustrative path, IDs, and exact text below with actual project
 values:
 
 ```text
-Use rectify-playbook on playbooks/backend.md, existing IDs P-014 and P-027.
+/rectify-playbook playbooks/backend.md, existing IDs P-014 and P-027.
 P-014: expected before "Use npm install in CI.";
 replacement after "Use npm ci in CI.";
 rationale: CI must use the committed lockfile.
@@ -240,12 +276,14 @@ Apply these exact corrections if independent read-only semantic review accepts t
 ```
 
 The script owns deterministic guards, hashes, separate audits, and retrieval;
-it does not replace the skill's semantic review workflow:
+it does not replace the skill's semantic review workflow. `<PROJECT_ROOT>` is
+the absolute root of the installed project; the script resolves repository data
+from its own installation, so these commands work from any directory:
 
 ```text
-node ace/scripts/rectify_playbook.js --request <file> --check
-node ace/scripts/rectify_playbook.js --request <file> --review <file> --apply
-node ace/scripts/rectify_playbook.js --resume <id>
+node <PROJECT_ROOT>/ace/scripts/rectify_playbook.js --request <absolute request file> --check
+node <PROJECT_ROOT>/ace/scripts/rectify_playbook.js --request <absolute request file> --review <absolute review file> --apply
+node <PROJECT_ROOT>/ace/scripts/rectify_playbook.js --resume <id>
 ```
 
 `--check` produces a read-only plan and hashes. `--apply` validates reviewed
@@ -300,7 +338,10 @@ INSTALL_PROMPT_MEDIATED.md   # installer for strict opt-in mediation
 UPDATE_PROMPT.md             # updater for an existing installation
 .github/skills/
 ├── install-ace/SKILL.md      # clean-install routing and preservation gate
-└── update-ace/SKILL.md       # conservative update and equivalence gate
+├── update-ace/SKILL.md       # conservative update and equivalence gate
+└── rectify-playbook/        # canonical external-correction skill source
+    ├── SKILL.md
+    └── references/review.md
 ace/
 ├── README_EMBEDDED.md       # full embedded runtime reference (English)
 ├── README_EMBEDDED_IT.md    # full embedded runtime reference (Italian)
@@ -309,9 +350,6 @@ ace/
 ├── runtime-version.json     # version, ownership, and kit-file hash contract
 ├── prompts/                 # reflector, curator, and warden behavior
 ├── scripts/                 # generation, inspection, retrieval, gate, apply, rectification
-├── skills/rectify-playbook/  # canonical installed runtime skill
-│   ├── SKILL.md
-│   └── references/review.md
 ├── schema/                  # trace and playbook bullet contracts
 ├── templates/               # installer inputs for generated integrations
 ├── traces/                  # capture guide and empty processed state

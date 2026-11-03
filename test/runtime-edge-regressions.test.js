@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const test = require('node:test');
+const { copyRuntimeKit } = require('./helpers/copy_runtime_kit');
 
 const KIT_ROOT = path.resolve(__dirname, '..');
 
@@ -12,7 +13,7 @@ function setupProject() {
   const fixtureRoot = path.join(KIT_ROOT, '.test-work');
   fs.mkdirSync(fixtureRoot, { recursive: true });
   const root = fs.mkdtempSync(path.join(fixtureRoot, 'runtime-edges-'));
-  fs.cpSync(path.join(KIT_ROOT, 'ace'), path.join(root, 'ace'), { recursive: true });
+  copyRuntimeKit(KIT_ROOT, root);
   fs.cpSync(path.join(KIT_ROOT, 'playbooks'), path.join(root, 'playbooks'), { recursive: true });
 
   const config = JSON.parse(fs.readFileSync(

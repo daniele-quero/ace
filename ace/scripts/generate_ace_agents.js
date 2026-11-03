@@ -57,13 +57,18 @@ function filesUnder(directory) {
 }
 
 function runtimeSkillArtifacts(config) {
-  const sourceFiles = filesUnder(path.join(REPO_ROOT, SKILL_SOURCE));
+  const manifest = readRuntimeManifest();
+  const runtimeDirectory = path.join(REPO_ROOT, SKILL_SOURCE);
+  const kitSource = manifest?.source_paths?.[`${SKILL_SOURCE}/SKILL.md`];
+  const sourceDirectory = fs.existsSync(runtimeDirectory) || !kitSource
+    ? runtimeDirectory : path.dirname(assertSafeWritePath(path.join(REPO_ROOT, kitSource)));
+  const sourceFiles = filesUnder(sourceDirectory);
   if (!sourceFiles.some((file) => path.basename(file) === 'SKILL.md')) {
     throw new Error(`Missing canonical runtime skill: ${SKILL_SOURCE}/SKILL.md`);
   }
   return enabledPlatforms(config).flatMap((platform) => sourceFiles.map((file) => {
-    const source = path.relative(REPO_ROOT, file).replace(/\\/g, '/');
-    const relative = path.relative(path.join(REPO_ROOT, SKILL_SOURCE), file);
+    const relative = path.relative(sourceDirectory, file);
+    const source = `${SKILL_SOURCE}/${relative.replace(/\\/g, '/')}`;
     const target = path.join(platform.name === 'copilot' ? '.github' : '.claude', 'skills', SKILL_NAME, relative)
       .replace(/\\/g, '/');
     return { source, target, content: fs.readFileSync(file, 'utf8') };
@@ -71,8 +76,7 @@ function runtimeSkillArtifacts(config) {
 }
 
 function planRuntimeSkills(config) {
-  const installedManifest = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'ace', 'runtime-version.json'), 'utf8'));
-  const previous = installedManifest.ownership?.kit_owned || {};
+  const previous = readRuntimeManifest()?.ownership?.kit_owned || {};
   const artifacts = runtimeSkillArtifacts(config);
   const edits = [];
   for (const artifact of artifacts) {
@@ -124,6 +128,16 @@ function readFileIfPresent(file) {
     if (error.code === 'ENOENT') return null;
     throw error;
   }
+}
+
+function readRuntimeManifest() {
+  const content = readFileIfPresent(path.join(REPO_ROOT, 'ace', 'runtime-version.json'));
+  if (content === null) return null;
+  const manifest = JSON.parse(content);
+  if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
+    throw new Error('runtime-version.json must contain a manifest object.');
+  }
+  return manifest;
 }
 
 function render(platformName, platform, role) {

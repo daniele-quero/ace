@@ -19,7 +19,7 @@ const slash = (value) => value.replace(/\\/g, '/');
 const nonempty = (value) => typeof value === 'string' && value.trim().length > 0;
 
 function readFile(file) {
-  const absolute = assertSafeWritePath(path.resolve(file));
+  const absolute = assertSafeWritePath(path.resolve(REPO_ROOT, file));
   if (!fs.statSync(absolute).isFile()) throw new Error(`Expected a regular file: ${file}`);
   return fs.readFileSync(absolute, 'utf8');
 }
@@ -286,7 +286,9 @@ function run(args = process.argv.slice(2)) {
     const arg = args[index];
     if (['--request', '--review', '--resume'].includes(arg)) {
       if (values[arg] || !args[index + 1] || args[index + 1].startsWith('--')) throw new Error(`Missing or duplicate value: ${arg}`);
-      values[arg] = args[++index];
+      const value = args[++index];
+      // File arguments follow the caller's directory; repository data always resolves from REPO_ROOT.
+      values[arg] = arg === '--resume' ? value : path.resolve(value);
     } else if (['--check', '--apply'].includes(arg) && !flags.has(arg)) {
       flags.add(arg);
     } else throw new Error(`Unsupported or duplicate argument: ${arg}`);

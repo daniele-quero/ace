@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const test = require('node:test');
+const { copyRuntimeKit } = require('./helpers/copy_runtime_kit');
 
 const KIT_ROOT = path.resolve(__dirname, '..');
 const WORK_ROOT = path.join(KIT_ROOT, '.test-work');
@@ -14,7 +15,7 @@ function setupTarget(t) {
   fs.mkdirSync(WORK_ROOT, { recursive: true });
   const root = fs.mkdtempSync(path.join(WORK_ROOT, 'update-regression-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  fs.cpSync(path.join(KIT_ROOT, 'ace'), path.join(root, 'ace'), { recursive: true });
+  copyRuntimeKit(KIT_ROOT, root);
   fs.mkdirSync(path.join(root, 'playbooks'), { recursive: true });
   fs.writeFileSync(path.join(root, '.gitignore'), '');
   const template = JSON.parse(fs.readFileSync(
