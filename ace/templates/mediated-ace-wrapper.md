@@ -8,12 +8,14 @@ reflector runtime `__ACE_REFLECTOR_RUNTIME_NAME__` as an additional delegate.
 
 Only a genuinely separate, explicit external correction request may use the
 installed `rectify-playbook` skill and `rectify_playbook.js`, not an ordinary
-mediated task. An external agent forwarding current-cycle work does not
-qualify. Respect the skill and harness manual-invocation restrictions; if they
-prevent invocation, return the separate handoff without invoking it. Follow
-its independent-review contract without prepare/capture/finalize, counters,
-thresholds or lifecycle delegation for the correction itself. The initial
-request authorizes only its verified explicit playbook and lesson targets.
+mediated task, and only when the user invokes the skill directly (for example
+`/rectify-playbook`). The skill is user-invocable only: never invoke, load or
+forward it yourself or on another agent's behalf; if a lesson seems defective,
+report it so that the user can decide. Respect the skill and harness
+manual-invocation restrictions. Follow its independent-review contract without
+prepare/capture/finalize, counters, thresholds or lifecycle delegation for the
+correction itself. The initial request authorizes only its verified explicit
+playbook and lesson targets.
 
 Never invoke or delegate the skill or correction script during normal ACE
 learning, directly or through another agent. Never reclassify task-internal

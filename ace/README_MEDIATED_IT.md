@@ -39,19 +39,25 @@ sovrascrivere comportamento del progetto e dati runtime.
 
 ## Rettifiche esplicite esterne al ciclo
 
-La selezione automatica della skill è disabilitata. Il ciclo ordinario non deve
-mai invocarla, delegarla, riclassificare il task come esterno o usarla come
-fallback per aggirare un blocco. Serve una richiesta esterna esplicita e
-separata, nel rispetto dei vincoli di invocazione dell'harness e con verifica
-indipendente della sua origine.
+`rectify-playbook` è invocabile solo dall'utente: la selezione automatica della
+skill è disabilitata (`disable-model-invocation: true`) e soltanto l'utente può
+avviarla, ad esempio con `/rectify-playbook`. Agenti, subagent, handoff e ciclo
+ordinario non devono mai invocarla, delegarla o inoltrarla, riclassificare il
+task come esterno o usarla come fallback per aggirare un blocco. Serve una
+richiesta esterna esplicita e separata, avviata dall'utente, nel rispetto dei
+vincoli di invocazione dell'harness e con verifica indipendente della sua
+origine.
 
-Ogni installazione e aggiornamento/upgrade distribuisce la
-[skill rectify-playbook](skills/rectify-playbook/SKILL.md) e il suo
-[contratto di verifica indipendente](skills/rectify-playbook/references/review.md).
-Il generatore installa la directory completa solo sulle piattaforme abilitate;
-i controlli di generazione e validazione includono questi asset.
+Ogni installazione e aggiornamento/upgrade distribuisce `rectify-playbook` e
+il contratto `references/review.md`. La sorgente del kit è
+`.github/skills/rectify-playbook/`; il campo `source_paths` del manifest la
+associa agli asset interni installati in `ace/skills/rectify-playbook/`.
+Il generatore installa copie complete e invocabili solo sulle piattaforme
+abilitate: `.github/skills/rectify-playbook/` per Copilot e
+`.claude/skills/rectify-playbook/` per Claude.
+I controlli di generazione e validazione includono questi asset.
 
-Una richiesta esplicita dell'utente o delegata da un agente deve indicare un
+L'invocazione esplicita dell'utente deve indicare un
 playbook, gli esatti ID P-XXX e la correzione desiderata. Un subagent indipendente
 di sola lettura è obbligatorio; trace e batch del ciclo non lo sono. La richiesta
 iniziale autorizza solo l'ambito verificato, senza una nuova conferma se invariato.

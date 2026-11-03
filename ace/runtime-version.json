@@ -1,7 +1,11 @@
 {
   "manifest_version": 1,
-  "runtime_version": "1.2.0",
+  "runtime_version": "1.2.1",
   "manifest_path": "ace/runtime-version.json",
+  "source_paths": {
+    "ace/skills/rectify-playbook/SKILL.md": ".github/skills/rectify-playbook/SKILL.md",
+    "ace/skills/rectify-playbook/references/review.md": ".github/skills/rectify-playbook/references/review.md"
+  },
   "ownership": {
     "kit_owned": {
       "ace/config/project.template.json": "9d8f53f035eec06307371ab053a634cfe52976ea01518c5aca9b5ffb21a544bd",
@@ -16,33 +20,33 @@
       "ace/scripts/check_threshold.js": "0cd3edddefc0053676415b64c6826be033906bdeaca7b2375460ebce1048c964",
       "ace/scripts/finalize_task.js": "ceecaf24eaa423a923d7c615ee4ec3f9e0808ce8dbc47c37caa4bbcb279fc635",
       "ace/scripts/gate.js": "424125557e00eb513c8f5b5cf8fb9ee066fd503e692661549d2b1f34f273893d",
-      "ace/scripts/generate_ace_agents.js": "c587fe0d718c9dbfa8bc2e816cabb767747c87bea2f89aa1adfcb5c99e21a031",
-      "ace/scripts/inspect_update.js": "4cf8a542dec39945e5a2e796c5d9719203f0eb9fd2d48d21fc98f62353b5c833",
+      "ace/scripts/generate_ace_agents.js": "dc3786cd361b56e4537bdd8d0a0c70b7f6150490463bca6d41b5dad9af2856ec",
+      "ace/scripts/inspect_update.js": "41d3ea034c0f8e2986ac3b7cf2801f1101335f2794859d0e1baacdc894d209f4",
       "ace/scripts/lib/playbook.js": "a83841d55ceb43c520ed381758358eb30ab84bc034c736f311d38baec4060730",
       "ace/scripts/lib/runtime.js": "a3fe93115727949624bc26c8a461f7e668845033a6529b927bc44d885faf2cdc",
       "ace/scripts/prepare_delegation.js": "9aacdeaf3b3e3530cf50d98da4f7a94a70f319551bb6372544553eb35189fadf",
-      "ace/scripts/rectify_playbook.js": "abc1d701973f146897d087c842d33976879d7b55ec92b45a567930ad0da57dec",
+      "ace/scripts/rectify_playbook.js": "8823945d756100f59ed462debb4941ecb6946e9b410b3fb2cb20afa574e6871f",
       "ace/scripts/retrieval.js": "fac27a0f298409d7bee6c31cdd5fa0d59dfcfeec1b3510c2e7cd1f86989aacb9",
       "ace/scripts/update_counters.js": "be4da3db4ff68ff41dc734484ed67fe14262f36f3303662f79cb452a3834fed2",
       "ace/scripts/validate_install.js": "7b5c3fb7ecea424ac7d4a57927091e6a04a0fedcad651056ad60bb82f51aee0d",
-      "ace/skills/rectify-playbook/references/review.md": "8b853051a7550654d34e657b4fbfce6b7f5a653f192b77bb163d8f62d3bcfb1e",
-      "ace/skills/rectify-playbook/SKILL.md": "2d3ea45323431589cadf7a863421c678c6acabd7318efbc4bcb01a7c38b4d912",
+      "ace/skills/rectify-playbook/references/review.md": "469353791e2ca49f75cbbd01c15684535411479c64dd8160bbae50cb2de9201a",
+      "ace/skills/rectify-playbook/SKILL.md": "e32d4f966f2b848ccfbb5b7fef40473cad155493dfbad2267417dfe7e0d4cc4e",
       "ace/templates/agent-ace-section.md": "88dcdbab441a77d7f64a1a06efe9e43e5c179a619b258688b25407555fdeb612",
-      "ace/templates/mediated-ace-wrapper.md": "2005f99037081e93198081514ab589755766f92569430029addf8223259b8fb6",
+      "ace/templates/mediated-ace-wrapper.md": "f5bb5c831fcfd2af570222e6cded0945dbc26ff2f5432783d66f5426d33f6c77",
       "ace/templates/mediated-adapter.md": "fabb06086696a3db9ae258ec970e5673a356aab5a39c85bb006074600ea88b0e",
-      "ace/templates/orchestrator-inline.md": "86c4fbc119e272be072990f82eec9a949925fab381c31ba9a287e5310b964c43",
-      "ace/templates/orchestrator-persona.md": "aaa9979dbfb300180392525723c7547c6e732c9cc7f032d0968978e743eb2680",
+      "ace/templates/orchestrator-inline.md": "ed433e76ab48e096eb5ab097eb0b24eac28f427da011ade60398786e34a3f767",
+      "ace/templates/orchestrator-persona.md": "9a8b456f102d8d656c779659333bb77d52b4e8c5b5207000b4fbbd3155b02344",
       "ace/templates/persona-wrapper-body.md": "c829bb532f1d127a69b26e7e154e95d132ac8afd70cb57850b0328a1200fa0ed",
       "ace/traces/CAPTURE_GUIDE.md": "3a765b4db5bf3ce971a460fdbb364215237614bc398c9dd0a56d3b6863e036ba"
     },
     "mode_specific": {
       "embedded": {
-        "ace/README_EMBEDDED.md": "cb9e221febf463b70c950f9a88114461a97e403a81b17391103534c8c8c8521b",
-        "ace/README_EMBEDDED_IT.md": "3d57bfd877e78413a1bd779a18958b9bdb995f7df6e6cff19089293e26f14422"
+        "ace/README_EMBEDDED.md": "aada7abe54fd8fd7665245ddce80526e9c849831230b831e383d5af21608f2de",
+        "ace/README_EMBEDDED_IT.md": "f1cc62242ce8fe97d20ee0d907e5bf1053587cba044d7d0d11526a350451da28"
       },
       "mediated": {
-        "ace/README_MEDIATED.md": "0e9ff5e55c362c948dff81feced99a286cd46469fa455f6d2c650225f97f9a95",
-        "ace/README_MEDIATED_IT.md": "99b813f4e3f815c11df734b41b3baac0ef5c4a5ee544984b6670d5269c218d11"
+        "ace/README_MEDIATED.md": "ed53b66dd896c77dc06ab0f8b5ac53619c76dd43289778fb165ce0f78b041975",
+        "ace/README_MEDIATED_IT.md": "46f20244a4e520a58826ac19d3d57ceeef31c5bb1bec23642e5a8c44d5b978d0"
       }
     },
     "managed_merge": [

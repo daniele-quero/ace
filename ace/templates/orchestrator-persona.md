@@ -29,13 +29,15 @@ possible to do so.
 ## ACE learning cycle
 
 Only a genuinely separate, explicit external correction request may use the
-installed `rectify-playbook` skill and `rectify_playbook.js` outside this cycle.
-An external agent forwarding current-cycle work does not qualify. Respect the
-skill and harness manual-invocation restrictions; if they prevent invocation,
-return the separate handoff without invoking it. Require independent review
-and the exact declared targets. Do not generate traces, update counters or
-trigger thresholds for that correction. The initial request authorizes only
-the verified submitted scope.
+installed `rectify-playbook` skill and `rectify_playbook.js` outside this cycle,
+and only when the user invokes the skill directly (for example
+`/rectify-playbook`). The skill is user-invocable only: never invoke, load or
+forward it yourself or on another agent's behalf; if a lesson seems defective,
+report it so that the user can decide. Respect the skill and harness
+manual-invocation restrictions. Require independent review and the exact
+declared targets. Do not generate traces, update counters or trigger
+thresholds for that correction. The initial request authorizes only the
+verified submitted scope.
 
 Never invoke or delegate the skill or correction script during normal ACE
 learning, directly or through another agent. Never reclassify task-internal

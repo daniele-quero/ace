@@ -8,8 +8,11 @@ Use actual source reads and read-only checks, not the author's assurances.
 
 - **scope**: Match the candidate to the original submitted request. Verify the
   actual external origin and separate correction-only task before reviewing
-  its substance. Reject ordinary-cycle work, lifecycle-created handoffs,
-  gate/evidence/approval bypasses, or unclear origin even when all hashes pass.
+  its substance: the user must have explicitly invoked `rectify-playbook` for
+  this correction. Reject ordinary-cycle work, lifecycle-created handoffs,
+  invocations initiated, delegated or forwarded by an agent, subagent, handoff
+  or automation, gate/evidence/approval bypasses, or unclear origin even when
+  all hashes pass.
   An author's label of "external" is not proof; inspect the initiating request.
   Verify the
   explicit playbook, every P-XXX ID, current before content, minimal scope and
@@ -39,8 +42,16 @@ Use actual source reads and read-only checks, not the author's assurances.
   Include preserved historical counters and any retrieval exclusions in the
   assessment. The correction must not rely on secretly resetting those fields.
 
-Independently rerun the installed `rectify_playbook.js --request <file> --check`
-when a compatible read-only shell is available; otherwise inspect the request
+Independently rerun the installed check by absolute path when a compatible
+read-only shell is available:
+
+```text
+node "<PROJECT_ROOT>/ace/scripts/rectify_playbook.js" --request "<absolute request file>" --check
+```
+
+`PROJECT_ROOT` is the absolute repository root supplied by the delegating
+agent; verify that it contains the installed `ace/config/project.json`.
+Otherwise inspect the request
 and sources and explicitly disclose the shell limitation. Never claim to have
 run a command without its real output. Any source or candidate change invalidates
 the prior review. Approve only when all five checks have a grounded result and
