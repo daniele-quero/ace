@@ -1,45 +1,48 @@
 {
   "manifest_version": 1,
-  "runtime_version": "1.1.0",
+  "runtime_version": "1.2.0",
   "manifest_path": "ace/runtime-version.json",
   "ownership": {
     "kit_owned": {
       "ace/config/project.template.json": "9d8f53f035eec06307371ab053a634cfe52976ea01518c5aca9b5ffb21a544bd",
       "ace/config/thresholds.json": "2c7bfdf524917d27676622758596447fa891f000cf751db2de4b56864e3ab1b0",
-      "ace/prompts/curator.md": "a81a6804b76d3a4af19a862abb3b16f3bedf08cfc05cf25c52297579c1c14027",
-      "ace/prompts/reflector.md": "3f6e585e96aa76a64bf5acd85f147a1c8f2cabebf4fc2c2986335e9209ae8d12",
-      "ace/prompts/warden.md": "937e80e164c361ad8ee278b2a9bea44b9bea3bd6b48a60cb52f0f3e82b9dfadf",
+      "ace/prompts/curator.md": "f5ea02d5e6b773e25758fd2ad8f98c9046fe280e5c5bff6cf5cf680fb8e382a0",
+      "ace/prompts/reflector.md": "99a00360c28f8958a56ba7a75d143d7ecbe1ab9249cef24e5a9a85c9ba9905f1",
+      "ace/prompts/warden.md": "334d8bf5d74285a0eb486c3a0a29e31a4e0fbf9b157a5ab2d706abb4956a74f4",
       "ace/schema/bullet.schema.json": "d7017c6e378eba40027d613d375132dd265cddbb7d2ccfc27797853c84730da8",
       "ace/schema/trace.schema.json": "67955f454381de324ebd15882e3619ac42f8d19216dd4bb0e66720052a264b79",
-      "ace/scripts/apply_delta.js": "aeaa9ff970d69c67dd5f1741c2a4f29439077668e221b75b37137c8765bda654",
+      "ace/scripts/apply_delta.js": "c36798a09113cfcabbb9de4a77ec1755339904819d29ba76f08210bed0f99fcd",
       "ace/scripts/capture_trace.js": "2b552a1c721e489a74853f7b1891c502f1c056b41566eb1801e81f39af796059",
       "ace/scripts/check_threshold.js": "0cd3edddefc0053676415b64c6826be033906bdeaca7b2375460ebce1048c964",
       "ace/scripts/finalize_task.js": "ceecaf24eaa423a923d7c615ee4ec3f9e0808ce8dbc47c37caa4bbcb279fc635",
       "ace/scripts/gate.js": "424125557e00eb513c8f5b5cf8fb9ee066fd503e692661549d2b1f34f273893d",
-      "ace/scripts/generate_ace_agents.js": "6910cf78d19c47ef8078cce92d43075ba8a62ef2c614494ed8a296256512c7fc",
-      "ace/scripts/inspect_update.js": "934f176754bba801ded7c068cd0ae0fc29e75f4e4d0fd46a7de18c1d83492b2f",
-      "ace/scripts/lib/playbook.js": "42dcc8395d412fdc058b281eb0bfcd122edbfc30b0753635daa9e5574a5399ba",
+      "ace/scripts/generate_ace_agents.js": "c587fe0d718c9dbfa8bc2e816cabb767747c87bea2f89aa1adfcb5c99e21a031",
+      "ace/scripts/inspect_update.js": "4cf8a542dec39945e5a2e796c5d9719203f0eb9fd2d48d21fc98f62353b5c833",
+      "ace/scripts/lib/playbook.js": "a83841d55ceb43c520ed381758358eb30ab84bc034c736f311d38baec4060730",
       "ace/scripts/lib/runtime.js": "a3fe93115727949624bc26c8a461f7e668845033a6529b927bc44d885faf2cdc",
       "ace/scripts/prepare_delegation.js": "9aacdeaf3b3e3530cf50d98da4f7a94a70f319551bb6372544553eb35189fadf",
+      "ace/scripts/rectify_playbook.js": "abc1d701973f146897d087c842d33976879d7b55ec92b45a567930ad0da57dec",
       "ace/scripts/retrieval.js": "fac27a0f298409d7bee6c31cdd5fa0d59dfcfeec1b3510c2e7cd1f86989aacb9",
-      "ace/scripts/update_counters.js": "ed418ddbf6f96ddce6b17f9a56360947b77e5c7be10c12fa3825cbf02bc1de50",
-      "ace/scripts/validate_install.js": "20e2b31a131249a47a7999702778d9b22f5203f1dc66eb08720f251011c525cd",
+      "ace/scripts/update_counters.js": "be4da3db4ff68ff41dc734484ed67fe14262f36f3303662f79cb452a3834fed2",
+      "ace/scripts/validate_install.js": "7b5c3fb7ecea424ac7d4a57927091e6a04a0fedcad651056ad60bb82f51aee0d",
+      "ace/skills/rectify-playbook/references/review.md": "8b853051a7550654d34e657b4fbfce6b7f5a653f192b77bb163d8f62d3bcfb1e",
+      "ace/skills/rectify-playbook/SKILL.md": "2d3ea45323431589cadf7a863421c678c6acabd7318efbc4bcb01a7c38b4d912",
       "ace/templates/agent-ace-section.md": "88dcdbab441a77d7f64a1a06efe9e43e5c179a619b258688b25407555fdeb612",
-      "ace/templates/mediated-ace-wrapper.md": "ce05f781431762ad8836323eb143884f53f3500d76dab62c5539851c0373dc7c",
+      "ace/templates/mediated-ace-wrapper.md": "2005f99037081e93198081514ab589755766f92569430029addf8223259b8fb6",
       "ace/templates/mediated-adapter.md": "fabb06086696a3db9ae258ec970e5673a356aab5a39c85bb006074600ea88b0e",
-      "ace/templates/orchestrator-inline.md": "5de20b3048b187b76eb6085eb1dec6b815d9a5f65b2cd3677a923948562b69bc",
-      "ace/templates/orchestrator-persona.md": "303e37e494513647c98119c32db25727d1cff6261c395bb12f8874ca7d5ca490",
+      "ace/templates/orchestrator-inline.md": "86c4fbc119e272be072990f82eec9a949925fab381c31ba9a287e5310b964c43",
+      "ace/templates/orchestrator-persona.md": "aaa9979dbfb300180392525723c7547c6e732c9cc7f032d0968978e743eb2680",
       "ace/templates/persona-wrapper-body.md": "c829bb532f1d127a69b26e7e154e95d132ac8afd70cb57850b0328a1200fa0ed",
       "ace/traces/CAPTURE_GUIDE.md": "3a765b4db5bf3ce971a460fdbb364215237614bc398c9dd0a56d3b6863e036ba"
     },
     "mode_specific": {
       "embedded": {
-        "ace/README_EMBEDDED.md": "408622293a1ba26184258ee16deb9f32f97539107060600c2337960aa737113a",
-        "ace/README_EMBEDDED_IT.md": "5b0721e5277d6e1b0d1b020ea1daf49dc2b45c8fa3fbbceabf8298356b6ba75c"
+        "ace/README_EMBEDDED.md": "cb9e221febf463b70c950f9a88114461a97e403a81b17391103534c8c8c8521b",
+        "ace/README_EMBEDDED_IT.md": "3d57bfd877e78413a1bd779a18958b9bdb995f7df6e6cff19089293e26f14422"
       },
       "mediated": {
-        "ace/README_MEDIATED.md": "515138c450a9ddda8d6d3cecbefaa6fb79eba76b1c9c9776229dff32490f9de3",
-        "ace/README_MEDIATED_IT.md": "864597779c9127db8699586ec3f7fb8f89d4fd0520827d66139ee8ce3f2b0a5d"
+        "ace/README_MEDIATED.md": "0e9ff5e55c362c948dff81feced99a286cd46469fa455f6d2c650225f97f9a95",
+        "ace/README_MEDIATED_IT.md": "99b813f4e3f815c11df734b41b3baac0ef5c4a5ee544984b6670d5269c218d11"
       }
     },
     "managed_merge": [

@@ -34,6 +34,30 @@ hash dei file posseduti dal kit. Entrambi forniscono evidenza alla procedura di
 aggiornamento, ma non autorizzano a sovrascrivere configurazione, comportamento
 operativo, playbook, trace o stato del progetto.
 
+## Rettifiche esplicite esterne al ciclo
+
+La selezione automatica della skill è disabilitata. Il ciclo ordinario non deve
+mai invocarla, delegarla, riclassificare il task come esterno o usarla come
+fallback per aggirare un blocco. Serve una richiesta esterna esplicita e
+separata, nel rispetto dei vincoli di invocazione dell'harness e con verifica
+indipendente della sua origine.
+
+Ogni installazione e aggiornamento/upgrade distribuisce la
+[skill rectify-playbook](skills/rectify-playbook/SKILL.md), insieme al
+[contratto di verifica indipendente](skills/rectify-playbook/references/review.md).
+`generate_ace_agents.js` installa la directory completa sulle piattaforme
+abilitate; `--check` e la validazione verificano presenza e allineamento.
+
+La richiesta deve specificare playbook, ID P-XXX e correzione desiderata:
+l'assenza dei target fa fallire la procedura. Serve un subagent indipendente
+di sola lettura, ma non servono trace o batch del ciclo ordinario. La richiesta
+iniziale autorizza l'ambito verificato; un cambio di ambito richiede chiarimenti.
+Lo [script di rettifica](scripts/rectify_playbook.js) conserva metadati e
+contenuti non coinvolti, registra un audit in `ace/state/rectifications/` e
+rigenera il retrieval. Le esclusioni restano valide e i contatori storici non
+vengono azzerati. Il percorso esplicito non modifica il gate del Warden e le
+due conferme umane del ciclo ordinario.
+
 ## Il ciclo ACE, letto dall'alto verso il basso
 
 Il modo migliore di leggere ACE è partire dal risultato e risalire al meccanismo:
@@ -191,7 +215,7 @@ validazione meccanica -> domanda esplicita -> revisione umana -> scrittura firma
 
 Questo è importante perché il sistema impara dai dati di esecuzione reali, non inventa sicurezza. `gate.js` può controllare struttura e coerenza, ma non può valutare in modo affidabile il conflitto semantico tra una nuova regola e il `playbook` esistente nello stesso scope. Quella è una valutazione umana.
 
-Il sign-off umano non è quindi un ornamento facoltativo. È il meccanismo che trasforma una proposta in una decisione reale del runtime. Senza quella conferma esplicita, `apply_delta.js` rifiuta di scrivere e `retrieval.js` non rigenera le `instructions` operative dallo stato nuovo.
+Per le modifiche prodotte dal ciclo di apprendimento, il sign-off umano non è un ornamento facoltativo: trasforma una proposta in una decisione reale del runtime. Senza quella conferma esplicita, `apply_delta.js` rifiuta di scrivere. Le rettifiche esterne esplicite seguono invece la skill verificata descritta sopra, senza inventare sign-off del ciclo ordinario.
 
 Il warden chiede due approvazioni distinte, prima della firma del gate e prima
 dell'applicazione del delta. Preferisce il tool domanda dedicato. Se il warden

@@ -19,6 +19,23 @@ a partire da questo prompt e da [ace/config/project.json](../config/project.json
 — non vanno editati a mano quando cambia il comportamento, si rigenerano
 con quello script.
 
+## Confine della rettifica esterna
+
+Nel normale ciclo ACE non invocare né delegare `rectify-playbook` o
+`rectify_playbook.js`, direttamente o tramite altri agenti. Non
+riclassificare task, scoperte, richieste o batch del ciclo corrente come
+rettifiche esterne, neppure se formulati esplicitamente o approvati nel
+ciclo. Gate falliti, trace mancanti, evidenza insufficiente o tool
+indisponibili sono blocchi da segnalare, non motivi per usare la rettifica
+come fallback o aggirare soglie, gate e conferme umane.
+
+Solo una richiesta esterna, esplicita e realmente separata dal task/ciclo
+corrente può avviare una rettifica fuori dal ciclo. Restituiscila al
+chiamante, senza eseguirla come fase di questo ruolo e senza trasformare
+una delega interna in un nuovo incarico esterno. L'eventuale incarico
+separato resta soggetto ai vincoli di invocazione manuale della skill e
+dell'harness e non esonera il ciclo corrente dai suoi controlli.
+
 ## Ruolo
 
 Sei il curator del ciclo ACE per il team definito in

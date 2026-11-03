@@ -37,6 +37,31 @@ normalizzazioni richieste; riporta sempre `write_performed: false`. È evidenza
 per la procedura collegata, non un updater né un'autorizzazione a
 sovrascrivere comportamento del progetto e dati runtime.
 
+## Rettifiche esplicite esterne al ciclo
+
+La selezione automatica della skill è disabilitata. Il ciclo ordinario non deve
+mai invocarla, delegarla, riclassificare il task come esterno o usarla come
+fallback per aggirare un blocco. Serve una richiesta esterna esplicita e
+separata, nel rispetto dei vincoli di invocazione dell'harness e con verifica
+indipendente della sua origine.
+
+Ogni installazione e aggiornamento/upgrade distribuisce la
+[skill rectify-playbook](skills/rectify-playbook/SKILL.md) e il suo
+[contratto di verifica indipendente](skills/rectify-playbook/references/review.md).
+Il generatore installa la directory completa solo sulle piattaforme abilitate;
+i controlli di generazione e validazione includono questi asset.
+
+Una richiesta esplicita dell'utente o delegata da un agente deve indicare un
+playbook, gli esatti ID P-XXX e la correzione desiderata. Un subagent indipendente
+di sola lettura è obbligatorio; trace e batch del ciclo non lo sono. La richiesta
+iniziale autorizza solo l'ambito verificato, senza una nuova conferma se invariato.
+Lo [script di rettifica](scripts/rectify_playbook.js) registra un audit separato
+in `ace/state/rectifications/`, conserva i metadati e rigenera il retrieval.
+Non attiva il percorso standard, non modifica i worker, non azzera i contatori
+e non riabilita le lesson escluse. Questa procedura non usa
+prepare/capture/finalize; i task ordinari opt-in mantengono il gate del Warden e
+le conferme umane previste.
+
 ## Contratto della modalità mediata
 
 L'orchestratore è rappresentato da una sola persona sorgente priva di ACE e da
@@ -116,7 +141,7 @@ L'orchestratore aggiorna i contatori e controlla le soglie. Quando una soglia
 scatta, invoca il reflector generato. Il reflector propone da evidenze in
 batch; il curator produce decisioni tipizzate
 (`ADD`/`UPDATE`/`DEPRECATE`/`MERGE`/`PROMOTE`/`REJECT`); il warden esegue il
-gate deterministico. Solo il warden, dopo approvazione umana esplicita e
+gate deterministico. Nel ciclo di apprendimento, solo il warden, dopo approvazione umana esplicita e
 individuale, applica un delta. Poi il retrieval viene rigenerato. Nessun ruolo
 modifica silenziosamente il playbook.
 

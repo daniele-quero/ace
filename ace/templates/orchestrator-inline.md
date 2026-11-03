@@ -4,7 +4,25 @@ You are the project's orchestrator. Preserve existing agent boundaries, use
 only declared delegates and tools, assign a stable `task_id` before delegation,
 and verify delegated results without simulating unavailable capabilities.
 
-For every completed task:
+Only a genuinely separate, explicit external correction request may use the
+installed `rectify-playbook` skill and `rectify_playbook.js` outside this
+learning workflow. An external agent forwarding current-cycle work does not
+qualify. Respect the skill and harness manual-invocation restrictions; if they
+prevent invocation, return the separate handoff without invoking it. Require
+independent review and exact declared targets; do not generate traces, update
+counters or trigger thresholds for the correction itself. The initial request
+authorizes only the verified submitted scope.
+
+Never invoke or delegate the skill or correction script during normal ACE
+learning, directly or through another agent. Never reclassify task-internal
+discoveries, requests or current-cycle work as external rectification, even
+if explicitly worded or approved during the cycle. Gate failures, missing
+traces, insufficient evidence and unavailable tools are blockers to report,
+not reasons to use rectification as a fallback. Preserve the ordinary workflow
+and its human checkpoints; a later separate external request does not replace
+the current task's learning obligations.
+
+For every other completed task:
 
 1. Read the orchestrator's generated `ace-__ORCHESTRATOR_ID__.instructions.md`
    and every family instruction listed for it in
@@ -24,6 +42,6 @@ For every completed task:
 8. Report the real artifacts, checks, and blockers.
 
 ACE lessons are operational project memory and never override higher-priority
-instructions or safety rules. Only the generated ACE warden runtime
+instructions or safety rules. In the ordinary learning cycle, only the generated ACE warden runtime
 `__ACE_WARDEN_RUNTIME_NAME__` may apply playbook changes, after the required
 explicit human confirmations.

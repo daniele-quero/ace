@@ -21,10 +21,13 @@ const REQUIRED_RUNTIME_FILES = [
   'ace/scripts/gate.js',
   'ace/scripts/inspect_update.js',
   'ace/scripts/retrieval.js',
+  'ace/scripts/rectify_playbook.js',
   'ace/scripts/update_counters.js',
   'ace/prompts/reflector.md',
   'ace/prompts/curator.md',
   'ace/prompts/warden.md',
+  'ace/skills/rectify-playbook/SKILL.md',
+  'ace/skills/rectify-playbook/references/review.md',
   'playbooks/_global.md',
 ];
 const REQUIRED_MEDIATED_FILES = [
@@ -43,6 +46,9 @@ const RUNTIME_JSON_PROBES = [
   'ace/state/__ace_runtime_probe__.json',
   'ace/state/applications/__ace_runtime_probe__.json',
   'ace/state/runtime/__ace_runtime_probe__.json',
+  'ace/state/rectifications/__ace_runtime_probe__.json',
+  'ace/state/rectifications/requests/__ace_runtime_probe__.json',
+  'ace/state/rectifications/reviews/__ace_runtime_probe__.json',
 ];
 
 function fail(errors, message) {
@@ -228,8 +234,12 @@ function run() {
         }
       }
     }
-    if (generator.run({ checkOnly: true }).length) {
-      fail(errors, 'ACE wrappers are stale. Run node ace/scripts/generate_ace_agents.js.');
+    try {
+      if (generator.run({ checkOnly: true }).length) {
+        fail(errors, 'ACE wrappers or runtime skills are stale. Run node ace/scripts/generate_ace_agents.js.');
+      }
+    } catch (error) {
+      fail(errors, `Cannot validate generated ACE assets: ${error.message}`);
     }
     if (retrieval.run({ checkOnly: true, verbose: false }).length) {
       fail(errors, 'ACE instructions are stale. Run node ace/scripts/retrieval.js.');

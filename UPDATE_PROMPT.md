@@ -67,15 +67,22 @@ generation metadata, and destination conventions outweigh filename alone.
 
 | Class | Typical content | Update rule |
 |---|---|---|
-| **Kit-owned** | ACE runtime scripts and libraries, lifecycle prompts, schemas, stock templates, framework documentation, generated ACE-only lifecycle wrappers | Replace with the corresponding current kit version, then reapply only destination path/name substitutions explicitly required by the file's contract. Do not carry forward local edits silently. |
+| **Kit-owned** | ACE runtime scripts and libraries, lifecycle prompts, schemas, stock templates, framework documentation, canonical runtime skills, generated ACE-only lifecycle wrappers and runtime-skill copies | Replace with the corresponding current kit version, then reapply only destination path/name substitutions explicitly required by the file's contract. Do not carry forward local edits silently; resolve generated-skill conflicts before regeneration. |
 | **Project-owned** | Operational personas, ordinary agent wrappers, registries/generators, global project instructions outside ACE-owned blocks, domain docs and code | Preserve behavior and metadata. Make only the smallest integration edit required by the current paradigm. Never replace from the kit. |
 | **Managed ACE merge** | `ace/config/project.json`, `.gitignore` ACE rules, generated retrieval blocks, ACE sections embedded in project-owned files, wrapper registrations and delegate lists | Reconcile structurally: preserve project values and unrelated content, refresh ACE-owned fields/blocks, and regenerate where a canonical generator exists. |
-| **Runtime data** | playbook lessons, traces, proposals, decisions, counters, applied-batch records, task/delegation state, other accumulated evidence | Runtime updates preserve byte-for-byte unless a documented, necessary, backward-compatible data migration exists. Never replace with kit data, reset, truncate, synthesize, or delete. |
+| **Runtime data** | playbook lessons, traces, proposals, decisions, counters, applied-batch records, rectification audits, task/delegation state, other accumulated evidence | Runtime updates preserve byte-for-byte unless a documented, necessary, backward-compatible data migration exists. Never replace with kit data, reset, truncate, synthesize, or delete. |
 
 An empty kit skeleton is not evidence that destination runtime data should be
 emptied. `.gitkeep`, format comments, and sample data are not replacements for
 real destination content. When ownership remains uncertain, preserve the file,
 record the ambiguity, and ask before changing it.
+
+The complete `ace/skills/rectify-playbook/` directory is kit-owned. Its
+generated platform copies have exact-subtree ownership, not ownership of
+`.github/skills/` or `.claude/skills/` as a whole. A matching directory name
+alone does not establish provenance. Unrelated host skills are project-owned;
+the kit's `install-ace` and `update-ace` operator skills remain separate
+user-level tools and must not be installed into host targets.
 
 ## Phase 0 — establish roots and a safe baseline
 
@@ -92,7 +99,9 @@ record the ambiguity, and ask before changing it.
    Run it from `KIT_ROOT`, never from an installed target copy. Preserve its
    `write_performed: false` report as the authoritative initial inventory of
    installed/current versions, the complete kit-owned file inventory, managed
-   merges, protected data, conflicts, and required normalization.
+   merges, protected data, conflicts, and required normalization. Retain the
+   prior installed manifest and its hashes until generation finishes; they
+   establish upgrade provenance for generated runtime-skill copies.
 3. Read all applicable destination repository instructions before any write.
 4. Inspect `git status`, including staged, unstaged, untracked, conflicted, and
    ignored ACE paths. Save the baseline status and relevant diffs for later
@@ -117,6 +126,12 @@ Read both kit and destination versions of:
 
 - lifecycle prompts and generated lifecycle wrappers;
 - runtime scripts and libraries;
+- `ace/scripts/rectify_playbook.js` and the complete canonical
+  `ace/skills/rectify-playbook/` directory, including `SKILL.md` and
+  `references/review.md`;
+- existing `.github/skills/rectify-playbook/` and
+  `.claude/skills/rectify-playbook/` subtrees, including extra files, local
+  modifications, prior-manifest ownership, and configured platform enablement;
 - schemas and stock templates;
 - ACE framework documentation;
 - `ace/config/project.template.json` and destination
@@ -196,6 +211,9 @@ Interpret version and provenance evidence before planning writes:
   local modification, incompatible or malformed manifest evidence, a
   non-regular path, an inspection/read error, or differing project behavior.
   Do not fold a true conflict into the legacy `unverified` group.
+- Same-name unowned runtime-skill contents that differ from the current kit,
+  locally modified skill contents, or unknown extra files are true conflicts,
+  not permission to adopt or overwrite the directory as an old ACE asset.
 
 ## Phase 2 — confirm the existing paradigm
 
@@ -230,6 +248,9 @@ resolved.
 Produce a path-level plan grouped by ownership. Include old/new runtime
 versions when the available manifest contract supplies them, compatibility
 notes, dirty-file handling, regeneration commands, and validation commands.
+Include the canonical `rectify-playbook` skill and complete copies on every
+enabled platform even when an older installation has none. This is required
+on every update or upgrade, not an optional feature or paradigm migration.
 
 Identify every destructive or semantic conflict before writing. Resolve each
 true conflict with one dedicated-tool question at a time. Resolve a legacy
@@ -249,6 +270,8 @@ Update the complete mutually compatible framework set, not isolated files:
 
 - lifecycle prompts for reflector, curator, and warden;
 - runtime scripts and their libraries;
+- `ace/scripts/rectify_playbook.js` and the complete kit-owned
+  `ace/skills/rectify-playbook/` skill, including `references/review.md`;
 - schemas used by those scripts;
 - stock templates consumed by generators or installers;
 - framework documentation appropriate to the preserved paradigm;
@@ -274,7 +297,49 @@ Keep prompts, scripts, schemas, templates, and docs version-compatible:
 - documentation must describe only the preserved paradigm and installed
   behavior;
 - lifecycle delegation and dedicated-question sign-off must remain intact;
-- only the approved apply path may write playbooks.
+- ordinary learning remains warden-only through `apply_delta.js`, with
+  separate explicit human sign-off and apply confirmations; the only
+  external-correction exception is explicitly invoked `rectify-playbook`
+  through `rectify_playbook.js` under mandatory independent semantic review.
+
+### Installed runtime-skill copies
+
+Use `generate_ace_agents.js` to install/check the complete canonical skill at
+`.github/skills/rectify-playbook/` for enabled Copilot and
+`.claude/skills/rectify-playbook/` for enabled Claude. Install missing copies
+on older hosts. Preserve platform selection; never create a disabled
+platform's copy or replace a whole skills root.
+Inventory the complete canonical skill directory as well; unknown destination
+extras are conflicts, not extensions to propagate into generated copies.
+
+The generator accepts absent or current copies and clean older copies proven
+by the prior installed manifest's hashes. Current kit hashes alone do not
+prove that a differing destination is owned. Same-name unowned differences,
+local modifications, non-regular paths, and unknown extra files block
+generation. Before regeneration, the updater must resolve only the explicitly
+approved conflicts inside the exact `rectify-playbook/` subtree. Do not use a
+blanket skills-directory overwrite or remove unrelated host skills. If a
+conflict cannot be resolved without losing unapproved content, stop.
+
+Preserve `disable-model-invocation: true`: never enable automatic selection.
+Normal ACE roles and orchestration must never invoke or delegate this skill,
+relabel current-cycle work as external, or use it as a gate/evidence fallback.
+Only a genuinely separate explicit external request is eligible, subject to
+harness manual-invocation restrictions and independent review of its origin.
+
+The skill handles explicit user- or agent-submitted corrections outside
+ordinary learning without mandatory traces. Preserve its skill/checklist
+semantic workflow separately from the script's
+deterministic guards, hashes, audit, and retrieval responsibilities. Requests
+must specify one playbook, explicit existing `P-XXX` IDs, expected-before and
+replacement-after content, and rationale; missing or ambiguous targets block.
+Independent read-only subagent semantic review is mandatory; unavailable,
+rejected, or unknown review blocks application. The initial request authorizes
+application after successful review within its unchanged scope; do not require
+renewed human approval unless scope, intent, or targets change.
+Existing contents only: no ADD/MERGE, moves, status changes, counter resets,
+fabricated traces/proposals/ordinary gate evidence, or consumption of pending
+lifecycle batches.
 
 ## Phase 5 — migrate `project.json` field by field
 
@@ -336,6 +401,18 @@ return contracts, fallbacks, escalation, negative gates, and the authorized
 alternative associated with each prohibition. Verify producer and consumer
 sides of every cross-agent flag or artifact.
 
+Refresh the orchestrator's ACE wiring from the appropriate current
+`orchestrator-persona.md`, `orchestrator-inline.md`, or
+`mediated-ace-wrapper.md` template without replacing project behavior. Merge
+its narrow distinction for genuinely separate, explicitly submitted external
+`rectify-playbook`-only requests: the correction itself uses the skill's guarded
+workflow, not normal
+trace writing, counter updates, threshold checks, or ordinary learning.
+In mediated mode, do not run `prepare_delegation.js`, `capture_trace.js`, or
+`finalize_task.js` for that correction. The rectification script's own
+retrieval regeneration still runs. Ordinary or mixed work is not
+correction-only and retains full lifecycle handling.
+
 For embedded mode, update ACE integration in exactly the already participating
 agents and orchestrator. Do not enroll additional agents.
 
@@ -347,6 +424,9 @@ For mediated mode:
 - update the distinct `-ace` wrapper's mediation block and lifecycle wiring;
 - both wrappers must continue to load the same canonical project persona;
 - never introduce global or automatic routing to the ACE wrapper.
+
+Installing or refreshing the external-correction skill does not authorize
+worker/persona changes, new participation, or blanket automatic skill routing.
 
 ### Registries and generators
 
@@ -385,6 +465,8 @@ Preserve all existing:
 - global, agent, and family playbook content and lesson ids;
 - traces and capture evidence;
 - proposals, decisions, approvals, and applied-batch records;
+- separate rectification audits in `ace/state/rectifications/`, including
+  interrupted application records;
 - counters, thresholds, task state, delegation manifests, and other runtime
   state;
 - destination-specific evaluator and governance history.
@@ -392,6 +474,9 @@ Preserve all existing:
 Do not renumber lessons, rewrite prose, reset counters, consume pending traces,
 reopen decisions, or mark proposals applied merely to fit a new kit layout.
 Do not create empty files over populated files.
+Do not apply or resume rectifications as part of the update: refreshing the
+skill is not authorization to change learned contents or consume lifecycle
+batches.
 
 If an updated schema makes old persisted data unreadable, first look for a
 documented, deterministic, backward-compatible migration supplied by the kit.
@@ -408,9 +493,11 @@ already contains that scope. Never infer new participation from kit samples.
 Use the commands actually present in the updated kit and destination. At
 minimum, run in dependency order:
 
-1. the ACE lifecycle-agent generator;
+1. `node ace/scripts/generate_ace_agents.js`, including complete enabled-platform
+   runtime-skill copies after approved conflict resolution;
 2. ACE retrieval generation;
-3. generator check mode;
+3. `node ace/scripts/generate_ace_agents.js --check`, including complete
+   runtime-skill contents;
 4. retrieval check mode;
 5. installation/runtime validation;
 6. destination registry/generator sync and check, when applicable;
@@ -442,6 +529,14 @@ Validate specifically that:
 - configuration contains no unresolved placeholders and satisfies the current
   schema/contract;
 - lifecycle prompts, scripts, schemas, templates, and docs agree;
+- `rectify_playbook.js`, canonical `ace/skills/rectify-playbook/SKILL.md`, and
+  `references/review.md` are current, including targets where they were
+  previously absent;
+- complete runtime-skill copies are current on every enabled platform, no
+  disabled-platform copy was created, unrelated host skills are unchanged,
+  and neither operator skill was installed into the host;
+- every runtime-skill conflict was explicitly resolved within its approved
+  exact subtree before generation; no unknown extra files remain there;
 - generated output is current and a second generation produces no diff;
 - `ace/runtime-version.json` is byte-for-byte identical to the kit manifest,
   was the final kit-owned write, and the final inspector reports coherent
@@ -460,8 +555,17 @@ Validate specifically that:
   warden wrapper declares a real platform question tool; if delegation
   does not propagate it, the orchestrator must relay each explicit human
   response via its own tool or a new user turn in the main chat;
-- sign-off remains explicit and only the approved apply path writes playbooks;
-- playbooks, traces, proposals, decisions, counters, and state are preserved;
+- ordinary learning retains warden-only sign-off/apply and two separate
+  explicit human checkpoints; only the explicit external-correction skill
+  provides the narrowly scoped, independently reviewed script exception;
+- external corrections retain exact-target guards, fail-closed read-only
+  semantic review, and initial-request authorization for unchanged scope;
+- the orchestrator's refreshed correction-only branch skips normal
+  trace/counter/threshold work and mediated prepare/capture/finalize only for
+  explicitly submitted `rectify-playbook`-only requests, never ordinary or
+  mixed work;
+- playbooks, traces, proposals, decisions, counters, rectification audits, and
+  state are preserved;
 - runtime JSON is not ignored and remains available for version control;
 - no kit project data, fixtures, unresolved conflict markers, or accidental
   secrets were copied.

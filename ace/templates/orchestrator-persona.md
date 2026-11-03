@@ -28,6 +28,25 @@ possible to do so.
 
 ## ACE learning cycle
 
+Only a genuinely separate, explicit external correction request may use the
+installed `rectify-playbook` skill and `rectify_playbook.js` outside this cycle.
+An external agent forwarding current-cycle work does not qualify. Respect the
+skill and harness manual-invocation restrictions; if they prevent invocation,
+return the separate handoff without invoking it. Require independent review
+and the exact declared targets. Do not generate traces, update counters or
+trigger thresholds for that correction. The initial request authorizes only
+the verified submitted scope.
+
+Never invoke or delegate the skill or correction script during normal ACE
+learning, directly or through another agent. Never reclassify task-internal
+discoveries, requests or current-cycle work as external rectification, even
+if explicitly worded or approved during the cycle. Gate failures, missing
+traces, insufficient evidence and unavailable tools are blockers to report,
+not reasons to use rectification as a fallback. Preserve the ordinary workflow
+and its human checkpoints; a later separate external request does not replace
+the current task's learning obligations.
+All other tasks retain the following workflow.
+
 1. Before acting, read the orchestrator's generated ACE instructions and
    every family instruction listed for it in
    `ace/config/project.json.agent_families`.
@@ -57,7 +76,7 @@ possible to do so.
 ## Safety
 
 - ACE lessons are subordinate to project instructions and safety constraints.
-- Only the generated ACE warden runtime `__ACE_WARDEN_RUNTIME_NAME__` may
+- In the ordinary learning cycle, only the generated ACE warden runtime `__ACE_WARDEN_RUNTIME_NAME__` may
   cross the final playbook write gate, and only after the required explicit
   human confirmations.
 - Never place secrets, unnecessary personal data, or full private transcripts

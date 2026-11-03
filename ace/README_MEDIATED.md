@@ -37,6 +37,30 @@ normalization; it always reports `write_performed: false`. This is evidence for
 the linked update procedure, not an updater or permission to overwrite
 project-owned behavior and runtime data.
 
+## Explicit external playbook corrections
+
+Automatic skill selection is disabled. Normal ACE work must never invoke or
+delegate this skill, relabel a task as external, or use it as a fallback for
+blocked learning. Only a separate explicit external request is eligible,
+subject to harness manual-invocation restrictions and review of its origin.
+
+Every installation and update/upgrade ships the
+[rectify-playbook skill](skills/rectify-playbook/SKILL.md) and its
+[independent review contract](skills/rectify-playbook/references/review.md).
+The existing generator deploys complete project-skill copies only for enabled
+platforms. Generation checks and installation validation cover these assets.
+
+An explicit user or delegated agent request must name one playbook, exact
+P-XXX targets and the intended correction. A separate read-only reviewer is
+mandatory; traces and lifecycle batches are not. The initial request authorizes
+only the reviewed scope, without another unchanged-scope approval.
+[rectify_playbook.js](scripts/rectify_playbook.js) records a separate audit under
+`ace/state/rectifications/`, preserves lesson metadata and regenerates retrieval.
+It does not activate the standard orchestrator path, change workers, reset
+counters or rehabilitate excluded lessons. Do not run prepare/capture/finalize
+for this correction-only workflow. Ordinary opted-in tasks retain their complete
+Warden gate and human sign-offs.
+
 ## The mediated contract
 
 The orchestrator is represented by exactly one ACE-free source persona and two
@@ -120,7 +144,7 @@ The orchestrator updates counters and checks configured thresholds. At a
 threshold it invokes the generated reflector wrapper. The reflector proposes
 from batched evidence, the curator emits typed decisions
 (`ADD`/`UPDATE`/`DEPRECATE`/`MERGE`/`PROMOTE`/`REJECT`), and the warden runs the
-deterministic gate. Only the warden, after an explicit one-at-a-time human
+deterministic gate. Within this learning cycle, only the warden, after an explicit one-at-a-time human
 approval, may apply a delta. Retrieval is then regenerated for the next opted-in
 session. No role silently edits the playbook.
 
